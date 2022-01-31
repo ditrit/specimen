@@ -1,0 +1,263 @@
+package specimen
+
+import (
+	"fmt"
+	"log"
+	"strings"
+
+	"github.com/ditrit/specimen/go/specimen/focustree"
+	"github.com/ditrit/specimen/go/specimen/syaml"
+	"gopkg.in/yaml.v3"
+)
+
+var _ = func() int {
+	log.SetFlags(0)
+	return 0
+}()
+
+// This file implement the focustree.Node interface for each of the the four levels found in the test data tree.
+
+// Level:
+// - TreeRoot
+// - YamlFile
+// - Nodule
+// - Nodule
+// - ...
+
+// TreeRoot implements focustree.Node
+
+func (t TreeRoot) GetChildren() (children []focustree.Node) {
+	for _, c := range t {
+		children = append(children, c)
+	}
+	return
+}
+
+func (TreeRoot) IsLeaf() bool {
+	return false
+}
+
+func (TreeRoot) GetFlag() focustree.FlagType {
+	return focustree.None
+}
+
+func (TreeRoot) Warning(info string) {
+	log.Printf("Warning: TreeRoot: %s\n", info)
+}
+
+// Nodule implements focustree.Node
+
+func (n Nodule) GetChildren() (children []focustree.Node) {
+	for _, c := range n.Children {
+		children = append(children, c)
+	}
+	return
+}
+
+func (n Nodule) IsLeaf() bool {
+	return len(n.Children) == 0
+}
+
+func (n Nodule) GetFlag() focustree.FlagType {
+	return n.Flag
+}
+
+func (n Nodule) Warning(info string) {
+	log.Printf("Warning: %s %s(%s): %s\n", n.Kind, n.Name, n.Location, info)
+}
+
+// ---
+
+var syc = syaml.NewSyaml(true, 90)
+
+func (n *Nodule) InitializeFile() (err error) {
+	document := &yaml.Node{}
+
+	err = yaml.Unmarshal(n.File.Content, document)
+	if err != nil {
+		return
+	}
+
+	// mapping
+	n.Mapping, err = syaml.EnterDocument(document)
+	if err != nil {
+		return
+	}
+	if !syc.IsMapping(n.Mapping) {
+		err = fmt.Errorf("the root of the document is expected to be a yaml mapping")
+		return
+	}
+
+	n.Initialize()
+
+	return
+}
+
+// Initialize tries to compute the properties of a Nodule necessary to perform
+// the slab selection.
+func (n *Nodule) Initialize() (err error) {
+	// location
+	n.Location = fmt.Sprintf("%s:%d:%d", n.File.Path, n.Mapping.Line, n.Mapping.Column)
+
+	if !syc.IsMapping(n.Mapping) {
+		err = n.Errorf("expected a mapping")
+		return
+	}
+
+	// input map initialisation
+	n.Input = make(map[string]interface{})
+
+	// flag
+	n.Flag = readFlag(n.Mapping)
+
+	// name
+	if nameNode := syc.MapTryGetValue(n.Mapping, "name"); nameNode != nil {
+		n.Name = nameNode.Value
+	}
+
+	// content node (for children)
+	contentNode := syc.MapTryGetValue(n.Mapping, "content")
+	if contentNode == nil {
+		if syc.MapTryGetValue(n.Mapping, "input") == nil {
+			err = n.Errorf("missing both \"content\" key and \"input\" key in the mapping")
+		}
+		return
+	}
+
+	// /\ content node processing
+	// kind
+	if len(contentNode.Content) > 0 && n.Kind == "Leaf" {
+		n.Kind = "Node"
+	}
+
+	// children
+	if !syc.IsSequence(contentNode) {
+		err = n.Errorf("the \"content\" value must be a yaml sequence")
+		return
+	}
+	for _, node := range contentNode.Content {
+		child := Nodule{File: n.File, Kind: "Leaf", Mapping: node}
+		err := child.Initialize()
+		if err != nil {
+			log.Printf("%s -- it has been ignored\n", err.Error())
+		} else if n.Flag != focustree.Skip {
+			n.Children = append(n.Children, child)
+		}
+	}
+	// \/ content node processing
+
+	return
+}
+
+// Populate fills the Codebox and Input fields through the tree of nodules
+func (n *Nodule) Populate(codeboxSet map[string]*Codebox, codebox *Codebox, input map[string]interface{}) error {
+	// box
+	if boxNode := syc.MapTryGetValue(n.Mapping, "box"); boxNode != nil {
+		if otherCodebox, ok := codeboxSet[boxNode.Value]; ok {
+			codebox = otherCodebox
+		} else {
+			return n.Errorf("no codebox with the name \"%s\" has been registered", boxNode.Value)
+		}
+	}
+
+	// input
+	for k, v := range input {
+		n.Input[k] = v
+	}
+	inputNode := syc.MapTryGetValue(n.Mapping, "input")
+	if inputNode != nil {
+		if !syc.IsMapping(inputNode) {
+			return n.Errorf("the value of \"input\" must be a mapping")
+		} else {
+			localInput := syc.ExtractContent(inputNode).(map[string]interface{})
+			for k, v := range localInput {
+				n.Input[k] = v
+			}
+		}
+	}
+
+	// slab case
+	if len(n.Children) == 0 {
+		if codebox == nil {
+			return n.Errorf("missing codebox")
+		}
+		n.Codebox = codebox
+		if inputNode == nil {
+			return n.Errorf("the input node is mandatory on slabs")
+		}
+		return nil
+	}
+
+	// node case: populating children
+	validChildren := []Nodule{}
+	for _, child := range n.Children {
+		err := child.Populate(codeboxSet, codebox, n.Input)
+		if err != nil {
+			log.Println(err.Error())
+		} else {
+			validChildren = append(validChildren, child)
+		}
+	}
+
+	if len(validChildren) == 0 {
+		return n.Errorf("no valid children")
+	}
+
+	n.Children = validChildren
+	return nil
+}
+
+func (n Nodule) Errorf(format string, a ...interface{}) error {
+	info := fmt.Sprintf(format, a...)
+	return fmt.Errorf("%s %s(%s): %s", n.Kind, n.Name, n.Location, info)
+}
+
+// ---
+
+func readFlag(node *yaml.Node) (flag focustree.FlagType) {
+	syc.AssertIsMapping(node)
+	flagNode := syc.MapTryGetValue(node, "flag")
+
+	if flagNode == nil {
+		return
+	}
+
+	var flagName string
+	both := false
+
+	for _, word := range strings.Split(syc.GetString(flagNode), " ") {
+		switch word {
+		case "FOCUS":
+			if flag == focustree.Skip {
+				both = true
+			}
+			flag = focustree.Focus
+			flagName = word
+		case "SKIP":
+			if flag == focustree.Focus {
+				both = true
+			}
+			flag = focustree.Skip
+			flagName = word
+		default:
+			if isUpperCase(word) {
+				log.Printf("Warning: Unrecognised all uppercase flag \"%s\". It has been ignored.\n", word)
+			}
+		}
+	}
+	if both {
+		log.Printf("Warning: both FOCUS and SKIP have been found among the flags of a node. %s has been kept.\n", flagName)
+	}
+
+	return
+}
+
+// isUppercase tells if the string only consists of letters in the range [A-Z]
+func isUpperCase(s string) bool {
+	for _, r := range s {
+		if r < 'A' || 'Z' < r {
+			return false
+		}
+	}
+	return true
+}

@@ -1,0 +1,31 @@
+content:
+  -
+    name: turn_page_output
+    box: turn_page
+    input:
+      book:
+        title: aleph
+        left_page: 0
+        size: 90
+      turn_page_count: 4
+      expected_result:
+        title: aleph
+        left_page: 8
+        size: 90
+  -
+    box: turn_page_expect_page
+    input:
+      book:
+        title: aleph
+        left_page: 0
+        size: 90
+      turn_page_count: 20
+      expected_left_page: 40
+  -
+    box: get_page
+    input:
+      book:
+        title: aleph
+        left_page: 44
+        size: 90
+      expected_result: 44

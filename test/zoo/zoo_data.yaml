@@ -1,0 +1,33 @@
+# This test data file validates the behavior of the `FOCUS` flag.
+# Nodules whose output is `_never_` should end up being skipped and thus,
+# should not produce any error.
+flag: FOCUS
+content:
+  -
+    box: zoo
+    flag: FOCUS
+    content:
+      -
+        name: horse
+        input:
+          animal: horse
+          expected_result: horse
+      -
+        name: parasprite # this slab should be ignored
+        flag: SKIP
+        input:
+          animal: parasprite
+  -
+    box: zoo
+    content:
+      -
+        name: manticore # this slab should be ignored as well since it is not focused
+        input:
+          animal: manticore
+        output: _never_
+      -
+        name: zebra
+        flag: FOCUS
+        input:
+          animal: zebra
+          expected_result: horse zebra
