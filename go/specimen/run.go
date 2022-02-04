@@ -98,18 +98,18 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 		if s.failStatus {
 			slabInfo := fmt.Sprintf("%s(%s)", slab.Name, slab.Location)
 
-			databoxInfo := ""
-			if len(slab.Name) > 0 {
-				databoxInfo = fmt.Sprintf("[Nodule %s]", slab.Name)
-			}
 			info := strings.Join(s.failInfo, "; ")
 
 			message := ""
 			if s.panicStatus {
 				s.panicStatus = false
-				message = fmt.Sprintf("Codebox %s for slab %s has panicked: %s", slab.Codebox.Name, slabInfo, info)
+				message = fmt.Sprintf("PANIC[codebox %s][slab %s]: %s", slab.Codebox.Name, slabInfo, info)
 			} else {
-				message = fmt.Sprintf("Nodule %s%s[Codebox %s] has failed: %s", slabInfo, databoxInfo, slab.Codebox.Name, info)
+				databoxInfo := ""
+				if len(slab.Name) > 0 {
+					databoxInfo = fmt.Sprintf("[nodule %s]", slab.Name)
+				}
+				message = fmt.Sprintf("FAIL[slab %s]%s[codebox %s]: %s", slabInfo, databoxInfo, slab.Codebox.Name, info)
 			}
 			s.failureReport = append(s.failureReport, message)
 		}

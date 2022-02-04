@@ -31,3 +31,17 @@ content:
         input:
           animal: zebra
           expected_result: horse zebra
+  -
+    flag: FOCUS
+    name: matrix_animals
+    box: zoo
+    matrix:
+      animal: [mouse, cat, dog]
+    input: {}
+  - 
+    flag: FOCUS
+    name: matrix_check
+    box: zoo
+    input:
+      animal: wolf
+      expected_result: horse zebra mouse cat dog wolf

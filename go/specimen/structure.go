@@ -56,4 +56,5 @@ type Nodule struct {
 	Children []Nodule
 	Codebox  *Codebox
 	Input    map[string]interface{}
+	Matrix   map[string][]interface{}
 }

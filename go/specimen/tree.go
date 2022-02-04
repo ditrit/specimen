@@ -48,8 +48,23 @@ func (TreeRoot) Warning(info string) {
 // Nodule implements focustree.Node
 
 func (n Nodule) GetChildren() (children []focustree.Node) {
-	for _, c := range n.Children {
+	noduleSlice := n.Children
+	if n.Matrix != nil {
+		// if n has a Matrix argument, use it right now -- children can wait
+		matrix := n.Matrix
+		n.Matrix = nil
+		noduleSlice = []Nodule{n.Clone()}
+		for key, valueSlice := range matrix {
+			noduleSlice = multiplySlice(key, valueSlice, noduleSlice)
+		}
+	}
+	// convert []Nodule to []focustree.Node
+	for _, c := range noduleSlice {
 		children = append(children, c)
+	}
+	if len(n.Matrix) > 0 {
+		fmt.Printf("ChildnSlice %+v\n", n.Children)
+		fmt.Printf("NoduleSlice %+v\n", noduleSlice)
 	}
 	return
 }
@@ -105,7 +120,7 @@ func (n *Nodule) Initialize() (err error) {
 	}
 
 	// input map initialisation
-	n.Input = make(map[string]interface{})
+	n.Input = map[string]interface{}{}
 
 	// flag
 	n.Flag = readFlag(n.Mapping)
@@ -173,6 +188,30 @@ func (n *Nodule) Populate(codeboxSet map[string]*Codebox, codebox *Codebox, inpu
 			for k, v := range localInput {
 				n.Input[k] = v
 			}
+		}
+	}
+
+	// matrix
+	for k, v := range input {
+		n.Input[k] = v
+	}
+	matrixNode := syc.MapTryGetValue(n.Mapping, "matrix")
+	if matrixNode != nil {
+		if !syc.IsMapping(matrixNode) {
+			return n.Errorf("the value of \"matrix\" must be a mapping")
+		}
+
+		n.Matrix = map[string][]interface{}{}
+
+		for k := 0; k < len(matrixNode.Content); k += 2 {
+			key := syc.GetString(matrixNode.Content[k])
+			valueNode := matrixNode.Content[k+1]
+			syc.AssertIsSequence(valueNode)
+			slice := []interface{}{}
+			for _, node := range valueNode.Content {
+				slice = append(slice, syc.ExtractContent(node))
+			}
+			n.Matrix[key] = slice
 		}
 	}
 
@@ -260,4 +299,33 @@ func isUpperCase(s string) bool {
 		}
 	}
 	return true
+}
+
+func (n *Nodule) Clone() (m Nodule) {
+	m.File = n.File
+	m.Mapping = n.Mapping
+	m.Kind = n.Kind
+	m.Location = n.Location
+	m.Flag = n.Flag
+	m.Name = n.Name
+	m.Children = n.Children
+	m.Codebox = n.Codebox
+	m.Input = map[string]interface{}{}
+	for k, v := range n.Input {
+		m.Input[k] = v
+	}
+	m.Matrix = n.Matrix
+	return
+}
+
+func multiplySlice(key string, valueSlice []interface{}, noduleSlice []Nodule) (resultSlice []Nodule) {
+	for _, nodule := range noduleSlice {
+		for k, value := range valueSlice {
+			other := nodule.Clone()
+			other.Input[key] = value
+			other.Location = fmt.Sprintf("%s(%s[%d])", other.Location, key, k)
+			resultSlice = append(resultSlice, other)
+		}
+	}
+	return
 }
