@@ -98,7 +98,7 @@
          style="font-style:oblique;font-variant:normal;font-weight:500;font-stretch:normal;font-size:3.52778px;font-family:'CMU Sans Serif';-inkscape-font-specification:'CMU Sans Serif Medium Oblique';text-align:center;text-anchor:middle;stroke-width:0.264583"
          x="73.520203"
          y="32.667656"
-         id="tspan129308">and  registers the code boxes</tspan></text>
+         id="tspan129308">and  registers the codeboxes</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;line-height:1.25;font-family:'CMU Sans Serif';-inkscape-font-specification:'CMU Sans Serif';text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
@@ -429,7 +429,7 @@
          style="stroke-width:0.264583"
          x="175.36096"
          y="96.942909"
-         id="tspan8742">Your golang code box</tspan><tspan
+         id="tspan8742">Your golang codebox</tspan><tspan
          sodipodi:role="line"
          style="stroke-width:0.264583"
          x="175.36096"

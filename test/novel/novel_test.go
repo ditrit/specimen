@@ -3,8 +3,8 @@ package novel_test
 import (
 	"testing"
 
-	"github.com/ditrit/specimen/example/novel"
 	"github.com/ditrit/specimen/go/specimen"
+	"github.com/ditrit/specimen/test/novel"
 )
 
 func deserialize_book(book_data specimen.Dict) novel.Book {
