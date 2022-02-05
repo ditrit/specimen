@@ -13,10 +13,19 @@ import (
 
 // Fail marks the slab as failed and saves the given information, if provided. It can be called multiple times for a single slab. All saved information will be reported.
 func (s *S) Fail(info string) {
-	s.failStatus = true
+	s.status = Failed
 	if len(info) > 0 {
 		s.failInfo = append(s.failInfo, info)
 	}
+}
+
+// Abort marks the slab as aborted and saves the given information, if provided.
+func (s *S) Abort(info string) {
+	s.status = Aborted
+	if len(info) > 0 {
+		s.failInfo = append(s.failInfo, info)
+	}
+	panic(nil)
 }
 
 // ExpectEqual test if the two given values are equal data structures
@@ -85,8 +94,7 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 		// - Recover from any panic that might arise during the codebox call
 		// - Check the output if an expected output is provided
 		// Nodule Start
-		s.failStatus = false
-		s.panicStatus = false
+		s.status = Pristine
 		s.failInfo = nil
 
 		// Nodule Run
@@ -95,22 +103,27 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 		// Nodule End
 		s.slabCount += 1
 		// summarize the failures
-		if s.failStatus {
+		if s.status != Pristine {
 			slabInfo := fmt.Sprintf("%s(%s)", slab.Name, slab.Location)
 
 			info := strings.Join(s.failInfo, "; ")
 
 			message := ""
-			if s.panicStatus {
-				s.panicStatus = false
-				message = fmt.Sprintf("PANIC[codebox %s][slab %s]: %s", slab.Codebox.Name, slabInfo, info)
-			} else {
+			switch s.status {
+			case Failed:
 				databoxInfo := ""
 				if len(slab.Name) > 0 {
 					databoxInfo = fmt.Sprintf("[nodule %s]", slab.Name)
 				}
-				message = fmt.Sprintf("FAIL[slab %s]%s[codebox %s]: %s", slabInfo, databoxInfo, slab.Codebox.Name, info)
+				message = fmt.Sprintf("FAIL%s[codebox %s][slab %s]: %s", databoxInfo, slab.Codebox.Name, slabInfo, info)
+			case Aborted:
+				message = "ABORT"
+			case Panicked:
+				message = "PANIC"
 			}
+
+			message = fmt.Sprintf("%s[codebox %s][slab %s]: %s", message, slab.Codebox.Name, slabInfo, info)
+
 			s.failureReport = append(s.failureReport, message)
 		}
 	}
@@ -132,6 +145,10 @@ func (nodule Nodule) runCodebox(s *S) {
 	defer func() {
 		// report that the codebox has panicked
 		if data := recover(); data != nil {
+			if s.status == Aborted {
+				return
+			}
+
 			report := strings.TrimSuffix(string(debug.Stack()), "\n")
 			info := "\n>   " + strings.ReplaceAll(report, "\n", "\n>   ")
 			if v, ok := data.(string); ok {
@@ -140,8 +157,7 @@ func (nodule Nodule) runCodebox(s *S) {
 				info += v.Error()
 			}
 
-			s.panicStatus = true
-			s.failStatus = true
+			s.status = Panicked
 			s.failInfo = append(s.failInfo, info)
 		}
 	}()

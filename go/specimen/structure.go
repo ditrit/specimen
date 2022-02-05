@@ -7,6 +7,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type FailStatus int
+
+const (
+	Pristine FailStatus = iota
+	Failed
+	Aborted
+	Panicked
+)
+
 // S is a context structure for the Specimen package
 type S struct {
 	t             *testing.T
@@ -14,9 +23,8 @@ type S struct {
 	failureReport []string
 
 	// The below values are reset for each slab
-	panicStatus bool
-	failStatus  bool
-	failInfo    []string
+	status   FailStatus
+	failInfo []string
 }
 
 // File represents a file by its path and content
