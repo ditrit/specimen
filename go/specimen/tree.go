@@ -50,21 +50,16 @@ func (TreeRoot) Warning(info string) {
 func (n Nodule) GetChildren() (children []focustree.Node) {
 	noduleSlice := n.Children
 	if n.Matrix != nil {
-		// if n has a Matrix argument, use it right now -- children can wait
-		matrix := n.Matrix
-		n.Matrix = nil
 		noduleSlice = []Nodule{n.Clone()}
-		for key, valueSlice := range matrix {
+		noduleSlice[0].Flag = focustree.None
+		noduleSlice[0].Matrix = nil
+		for key, valueSlice := range n.Matrix {
 			noduleSlice = multiplySlice(key, valueSlice, noduleSlice)
 		}
 	}
 	// convert []Nodule to []focustree.Node
 	for _, c := range noduleSlice {
 		children = append(children, c)
-	}
-	if len(n.Matrix) > 0 {
-		fmt.Printf("ChildnSlice %+v\n", n.Children)
-		fmt.Printf("NoduleSlice %+v\n", noduleSlice)
 	}
 	return
 }
@@ -192,9 +187,6 @@ func (n *Nodule) Populate(codeboxSet map[string]*Codebox, codebox *Codebox, inpu
 	}
 
 	// matrix
-	for k, v := range input {
-		n.Input[k] = v
-	}
 	matrixNode := syc.MapTryGetValue(n.Mapping, "matrix")
 	if matrixNode != nil {
 		if !syc.IsMapping(matrixNode) {

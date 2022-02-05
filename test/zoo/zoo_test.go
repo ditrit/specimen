@@ -27,6 +27,18 @@ func TestFocusZoo(t *testing.T) {
 					}
 				}
 			},
+			"animalkind": func(s *specimen.S, input specimen.Dict) {
+				name := input["name"].(string)
+				if name == "deer" {
+					s.ExpectEqual(input["horn"].(int), 2, "deer horns")
+					s.ExpectEqual(input["leg"].(int), 4, "deer leg")
+				} else if name == "earthpony" {
+					s.ExpectEqual(input["horn"].(int), 0, "earthpony horn")
+					s.ExpectEqual(input["leg"].(int), 4, "earthpony leg")
+				} else {
+					s.Fail("unknown animal name: " + name)
+				}
+			},
 		}),
 		[]specimen.File{
 			specimen.ReadLocalFile("zoo_data.yaml"),

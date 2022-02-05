@@ -3,6 +3,7 @@ package syaml
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -87,6 +88,12 @@ func (c *Config) ExtractContent(node *yaml.Node) interface{} {
 				panic(fmt.Errorf("integer parsing failed with message [%s]", err))
 			}
 			return int(result)
+		} else if node.Tag == "!!bool" {
+			value := strings.ToLower(node.Value)
+			if value == "true" || value == "on" || value[0] == 'y' {
+				return true
+			}
+			return false
 		}
 		panic(fmt.Errorf("unknown scalar tag [%s]", node.Tag))
 	case yaml.SequenceNode:

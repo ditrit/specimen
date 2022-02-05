@@ -33,15 +33,30 @@ content:
           expected_result: horse zebra
   -
     flag: FOCUS
-    name: matrix_animals
+    name: matrix animals
     box: zoo
     matrix:
       animal: [mouse, cat, dog]
     input: {}
   - 
     flag: FOCUS
-    name: matrix_check
+    name: matrix check
     box: zoo
     input:
       animal: wolf
       expected_result: horse zebra mouse cat dog wolf
+  - 
+    flag: FOCUS
+    name: combined input check
+    input:
+      leg: 4
+      horn: 0
+    content:
+      - box: animalkind
+        input:
+          tail: true
+          name: earthpony
+      - box: animalkind
+        input:
+          horn: 2
+          name: deer
