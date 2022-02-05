@@ -149,7 +149,7 @@ func (n *Nodule) Initialize() (err error) {
 		child := Nodule{File: n.File, Kind: "Leaf", Mapping: node}
 		err := child.Initialize()
 		if err != nil {
-			log.Printf("%s -- it has been ignored\n", err.Error())
+			log.Printf("%s -- this has been ignored\n", err.Error())
 		} else if n.Flag != focustree.Skip {
 			n.Children = append(n.Children, child)
 		}
@@ -210,11 +210,11 @@ func (n *Nodule) Populate(codeboxSet map[string]*Codebox, codebox *Codebox, inpu
 	// slab case
 	if len(n.Children) == 0 {
 		if codebox == nil {
-			return n.Errorf("missing codebox")
+			return n.Errorf("no box declared down to this slab")
 		}
 		n.Codebox = codebox
 		if inputNode == nil {
-			return n.Errorf("the input node is mandatory on slabs")
+			return n.Errorf("the input entry is mandatory on slabs")
 		}
 		return nil
 	}
