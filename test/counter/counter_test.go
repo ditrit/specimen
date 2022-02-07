@@ -8,7 +8,7 @@ import (
 
 var counter = 0
 
-func TestFocusZoo(t *testing.T) {
+func TestCounting(t *testing.T) {
 	specimen.Run(
 		t,
 		specimen.MakeCodeboxSet(map[string]specimen.BoxFunction{
@@ -25,7 +25,7 @@ func TestFocusZoo(t *testing.T) {
 			},
 		}),
 		[]specimen.File{
-			specimen.ReadLocalFile("counter.spec.yaml"),
+			specimen.ReadLocalFile("counter_data.yaml"),
 		},
 	)
 }

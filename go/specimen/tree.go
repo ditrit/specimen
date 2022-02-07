@@ -3,6 +3,7 @@ package specimen
 import (
 	"fmt"
 	"log"
+	"runtime/debug"
 	"strings"
 
 	"github.com/ditrit/specimen/go/specimen/focustree"
@@ -48,17 +49,8 @@ func (TreeRoot) Warning(info string) {
 // Nodule implements focustree.Node
 
 func (n Nodule) GetChildren() (children []focustree.Node) {
-	noduleSlice := n.Children
-	if n.Matrix != nil {
-		noduleSlice = []Nodule{n.Clone()}
-		noduleSlice[0].Flag = focustree.None
-		noduleSlice[0].Matrix = nil
-		for key, valueSlice := range n.Matrix {
-			noduleSlice = multiplySlice(key, valueSlice, noduleSlice)
-		}
-	}
 	// convert []Nodule to []focustree.Node
-	for _, c := range noduleSlice {
+	for _, c := range n.Children {
 		children = append(children, c)
 	}
 	return
@@ -160,7 +152,11 @@ func (n *Nodule) Initialize() (err error) {
 }
 
 // Populate fills the Codebox and Input fields through the tree of nodules
-func (n *Nodule) Populate(codeboxSet map[string]*Codebox, codebox *Codebox, input map[string]interface{}) error {
+func (n *Nodule) Populate(
+	codeboxSet map[string]*Codebox, codebox *Codebox,
+	input map[string]interface{},
+	matrix map[string][]interface{},
+) error {
 	// box
 	if boxNode := syc.MapTryGetValue(n.Mapping, "box"); boxNode != nil {
 		if otherCodebox, ok := codeboxSet[boxNode.Value]; ok {
@@ -187,6 +183,9 @@ func (n *Nodule) Populate(codeboxSet map[string]*Codebox, codebox *Codebox, inpu
 	}
 
 	// matrix
+	for k, v := range matrix {
+		n.Matrix[k] = v
+	}
 	matrixNode := syc.MapTryGetValue(n.Mapping, "matrix")
 	if matrixNode != nil {
 		if !syc.IsMapping(matrixNode) {
@@ -216,13 +215,32 @@ func (n *Nodule) Populate(codeboxSet map[string]*Codebox, codebox *Codebox, inpu
 		if inputNode == nil {
 			return n.Errorf("the input entry is mandatory on slabs")
 		}
+
+		if len(n.Matrix) > 0 {
+			debug.SetMaxStack(50 * 1000)
+			// generate matrix children
+			noduleSlice := []Nodule{n.Clone()}
+			noduleSlice[0].Flag = focustree.None
+			noduleSlice[0].Matrix = nil
+			for key, valueSlice := range n.Matrix {
+				noduleSlice = multiplySlice(key, valueSlice, noduleSlice)
+			}
+			n.Children = noduleSlice
+			for _, child := range n.Children {
+				for k, v := range n.Input {
+					child.Input[k] = v
+				}
+			}
+			// the slab has become a node -> continue to node processing
+		}
+		// all good with the current slab
 		return nil
 	}
 
 	// node case: populating children
 	validChildren := []Nodule{}
 	for _, child := range n.Children {
-		err := child.Populate(codeboxSet, codebox, n.Input)
+		err := child.Populate(codeboxSet, codebox, n.Input, n.Matrix)
 		if err != nil {
 			log.Println(err.Error())
 		} else {

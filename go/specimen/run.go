@@ -71,7 +71,7 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 	var validTree TreeRoot
 	for _, nodule := range tree {
 		// err := nodule.Populate(codeboxSet, nil, map[string]interface{}{})
-		err := nodule.Populate(codeboxSet, nil, nil)
+		err := nodule.Populate(codeboxSet, nil, nil, nil)
 		if err != nil {
 			log.Println(err.Error())
 		} else {

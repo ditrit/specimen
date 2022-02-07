@@ -20,4 +20,4 @@ content:
     input: {}
   - name: value_check_second
     input:
-      expected_count: 20
+      expected_count: 21
