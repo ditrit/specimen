@@ -1,0 +1,23 @@
+box: counter
+content:
+  - name: value_check_initial
+    input:
+      expected_count: 0
+  - name: value_check_reinitial
+    input:
+      expected_count: 1
+  - name: matrix_letter
+    matrix:
+      letter: [a, b, c]
+    input: {}
+  - name: value_check
+    input:
+      expected_count: 5
+  - name: matrix_letter_digit
+    matrix:
+      letter: [a, b, c]
+      digit: [1, 2, 3, 4, 5]
+    input: {}
+  - name: value_check_second
+    input:
+      expected_count: 20
