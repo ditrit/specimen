@@ -115,7 +115,7 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 				if len(slab.Name) > 0 {
 					databoxInfo = fmt.Sprintf("[nodule %s]", slab.Name)
 				}
-				message = fmt.Sprintf("FAIL%s[codebox %s][slab %s]: %s", databoxInfo, slab.Codebox.Name, slabInfo, info)
+				message = fmt.Sprintf("FAIL%s", databoxInfo)
 			case Aborted:
 				message = "ABORT"
 			case Panicked:

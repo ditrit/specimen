@@ -13,7 +13,9 @@ func (c *Config) MapTryGetValue(node *yaml.Node, key string) *yaml.Node {
 	c.Resolve(&node)
 	for k := 0; k < len(node.Content); k += 2 {
 		if node.Content[k].Value == key {
-			return node.Content[k+1]
+			result := node.Content[k+1]
+			c.Resolve(&result)
+			return result
 		}
 	}
 	return nil

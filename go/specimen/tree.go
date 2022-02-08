@@ -157,6 +157,10 @@ func (n *Nodule) Populate(
 	input map[string]interface{},
 	matrix map[string][]interface{},
 ) error {
+	if n.Flag == focustree.Skip {
+		return nil
+	}
+
 	// box
 	if boxNode := syc.MapTryGetValue(n.Mapping, "box"); boxNode != nil {
 		if otherCodebox, ok := codeboxSet[boxNode.Value]; ok {
@@ -231,7 +235,6 @@ func (n *Nodule) Populate(
 					child.Input[k] = v
 				}
 			}
-			// the slab has become a node -> continue to node processing
 		}
 		// all good with the current slab
 		return nil
