@@ -20,6 +20,10 @@ const (
 type S struct {
 	t             *testing.T
 	slabCount     int
+	slabPassed    int
+	slabFailed    int
+	slabAborted   int
+	slabPanicked  int
 	failureReport []string
 
 	// The below values are reset for each slab

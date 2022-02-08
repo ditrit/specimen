@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ditrit/specimen/go/specimen/focustree"
 	"github.com/go-test/deep"
@@ -86,6 +87,8 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 	// issued.
 	selectedLeaves := focustree.ExctractSelectedLeaves(validTree)
 
+	startTime := time.Now()
+
 	// Run all the selected slab
 	for _, leaf := range selectedLeaves {
 		slab := leaf.(Nodule)
@@ -102,6 +105,16 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 
 		// Nodule End
 		s.slabCount += 1
+		switch s.status {
+		case Pristine:
+			s.slabPassed += 1
+		case Failed:
+			s.slabFailed += 1
+		case Aborted:
+			s.slabAborted += 1
+		case Panicked:
+			s.slabPanicked += 1
+		}
 		// summarize the failures
 		if s.status != Pristine {
 			slabInfo := fmt.Sprintf("%s(%s)", slab.Name, slab.Location)
@@ -128,16 +141,22 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 		}
 	}
 
+	duration := time.Since(startTime)
+
 	// Reporting what has been saved in s
 	if len(s.failureReport) > 0 {
 		s.t.Fail()
 		log.Println(strings.Join(s.failureReport, "\n"))
 	}
+	var outcome = "SUCCESS"
+	if len(s.failureReport) > 0 {
+		outcome = "FAILURE"
+	}
 	log.Printf(
-		"%d slab-s succeeded over %d. (%d failed)\n\n",
-		s.slabCount-len(s.failureReport),
-		s.slabCount,
-		len(s.failureReport),
+		"Ran %d slabs in %v\n"+
+			"%s -- %d Passed | %d Failed | %d Aborted | %d Panicked",
+		s.slabCount, duration,
+		outcome, s.slabPassed, s.slabFailed, s.slabAborted, s.slabPanicked,
 	)
 }
 
