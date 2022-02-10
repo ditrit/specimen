@@ -7,7 +7,7 @@ Specimen is a yaml data format for data-driven testing. This enforces separation
 It comes with a golang implementation for loading the data, checking its format,
 running your golang _test boxes_ (called _code boxed_) and comparing the result with the expected one.
 
-It supports using the `FOCUS` and `SKIP` flag in the data to run only part of the test data.
+It supports using the `FOCUS` and `PENDING` flag in the data to run only part of the test data.
 
 ## Overview
 
@@ -69,7 +69,7 @@ content:
             left_page: 8
             size: 90
       -
-        flag: SKIP
+        flag: PENDING
         input:
           book:
             title: aleph
@@ -88,7 +88,7 @@ content:
       expected_result: 44
 ```
 
-The input entry is required and must be a map. It is passed to the test box. The output entry may be any value but it must only be present if the box returns a value. The supported flags are FOCUS and SKIP - the uppercase is mandatory. This two flags are supported on all nodes of the data tree.
+The input entry is required and must be a map. It is passed to the test box. The output entry may be any value but it must only be present if the box returns a value. The supported flags are FOCUS and PENDING - the uppercase is mandatory. This two flags are supported on all nodes of the data tree.
 
 ## Code box
 
@@ -198,7 +198,7 @@ nodule:
     # name is an indicative name of for the nodule it is mentioned in the error
     # report if present
     name: string
-    # if the flag contains FOCUS or SKIP the nodule and its desendents will be
+    # if the flag contains FOCUS or PENDING the nodule and its desendents will be
     # prioritized or ignored
     flag: string
     # input contains the entries passed to the box

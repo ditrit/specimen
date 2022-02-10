@@ -135,7 +135,7 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 				message = "PANIC"
 			}
 
-			message = fmt.Sprintf("%s[codebox %s][slab %s]: %s", message, slab.Codebox.Name, slabInfo, info)
+			message = fmt.Sprintf("%s[codebox: %s][slab: %s]: %s", message, slab.Codebox.Name, slabInfo, info)
 
 			s.failureReport = append(s.failureReport, message)
 		}

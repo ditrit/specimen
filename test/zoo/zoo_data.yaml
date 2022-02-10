@@ -14,7 +14,7 @@ content:
           expected_result: horse
       -
         name: parasprite # this slab should be ignored
-        flag: SKIP
+        flag: PENDING
         input:
           animal: parasprite
   -

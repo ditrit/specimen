@@ -285,7 +285,7 @@ func readFlag(node *yaml.Node) (flag focustree.FlagType) {
 			}
 			flag = focustree.Focus
 			flagName = word
-		case "SKIP":
+		case "PENDING":
 			if flag == focustree.Focus {
 				both = true
 			}
@@ -298,7 +298,7 @@ func readFlag(node *yaml.Node) (flag focustree.FlagType) {
 		}
 	}
 	if both {
-		log.Printf("Warning: both FOCUS and SKIP have been found among the flags of a node. %s has been kept.\n", flagName)
+		log.Printf("Warning: both FOCUS and PENDING have been found among the flags of a node. %s has been kept.\n", flagName)
 	}
 
 	return

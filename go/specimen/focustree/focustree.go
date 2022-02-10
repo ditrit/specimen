@@ -17,7 +17,7 @@ type Node interface {
 
 // ExctractSelectedLeaves goes through the tree and find leaves
 // whose data should be processed according to the flag
-// (FOCUS, SKIP)
+// (FOCUS, PENDING)
 func ExctractSelectedLeaves(tree Node) []Node {
 	focusedNodeSlice := []Node{}
 	findFocusedNodes(tree, &focusedNodeSlice)
