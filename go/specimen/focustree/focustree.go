@@ -18,7 +18,7 @@ type Node interface {
 // ExctractSelectedLeaves goes through the tree and find leaves
 // whose data should be processed according to the flag
 // (FOCUS, PENDING)
-func ExctractSelectedLeaves(tree Node) []Node {
+func ExctractSelectedLeaves(tree Node, skipCount *int) []Node {
 	focusedNodeSlice := []Node{}
 	findFocusedNodes(tree, &focusedNodeSlice)
 	if len(focusedNodeSlice) == 0 {
@@ -26,7 +26,7 @@ func ExctractSelectedLeaves(tree Node) []Node {
 	}
 	leafSlice := []Node{}
 	for _, node := range focusedNodeSlice {
-		getLeaves(node, &leafSlice)
+		getLeaves(node, &leafSlice, skipCount)
 	}
 	return leafSlice
 }
@@ -54,12 +54,13 @@ func findFocusedNodes(node Node, focusedNodeSlice *[]Node) {
 }
 
 // getLeaves adds all the leaves below the given node to a slice.
-func getLeaves(node Node, leafSlice *[]Node) {
+func getLeaves(node Node, leafSlice *[]Node, pendingCount *int) {
 	if node.GetFlag() == Skip {
+		*pendingCount += 1
 		return
 	}
 	for _, child := range node.GetChildren() {
-		getLeaves(child, leafSlice)
+		getLeaves(child, leafSlice, pendingCount)
 	}
 	if node.IsLeaf() {
 		*leafSlice = append(*leafSlice, node)

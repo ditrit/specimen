@@ -24,6 +24,7 @@ type S struct {
 	slabFailed    int
 	slabAborted   int
 	slabPanicked  int
+	nodulePending int
 	failureReport []string
 
 	// The below values are reset for each slab
