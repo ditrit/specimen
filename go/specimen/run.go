@@ -85,7 +85,7 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 	// after all its children have been checked. If a node which has FOCUS-ed
 	// children is FOCUS-ed too, its FOCUS-ed flag is ignored and a warning is
 	// issued.
-	selectedLeaves := focustree.ExctractSelectedLeaves(validTree, &s.nodulePending)
+	selectedLeaves := focustree.ExctractSelectedLeaves(validTree)
 
 	startTime := time.Now()
 
@@ -154,9 +154,9 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 	}
 	log.Printf(
 		"Ran %d slabs in %v\n"+
-			"%s -- %d Passed | %d Failed | %d Aborted | %d Panicked | %d+ Pending",
+			"%s -- %d Passed | %d Failed | %d Aborted | %d Panicked",
 		s.slabCount, duration,
-		outcome, s.slabPassed, s.slabFailed, s.slabAborted, s.slabPanicked, s.nodulePending,
+		outcome, s.slabPassed, s.slabFailed, s.slabAborted, s.slabPanicked,
 	)
 }
 
