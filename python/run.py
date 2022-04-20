@@ -1,4 +1,4 @@
-import enum
+import dataclasses
 import unittest
 from datetime import datetime
 from typing import Callable
@@ -7,47 +7,12 @@ import yaml
 
 import python.focustree as focustree
 from .file import File
-from .tree import Nodule, TreeRoot
+from .tree import Nodule, TreeRoot, FailStatus, SpecimenContext
 
-Codebox = Callable[[dict], None]
-
-
-class FailStatus(enum.Enum):
-    PRISTINE = 0
-    FAILED = 1
-    ABORTED = 2
-    PANICKED = 3
-
-
-class SpecimenContext:
-    def __init__(self, unittest: unittest):
-        self.unittest = unittest
-        self.slab_count = 0
-        self.slab_passed = 0
-        self.slab_failed = 0
-        self.slab_aborted = 0
-        self.slab_panicked = 0
-        self.failure_report = []
-
-        self.status = FailStatus.PRISTINE
-        self.fail_info = []
-
-    def fail(self, info: str):
-        self.status = Failed
-        if len(info) > 0:
-            s.fail_info.append(info)
-
-    def abort(self, info: str):
-        s.status = Aborted
-        if len(info) > 0:
-            s.fail_info.append(info)
-        raise Exception()
-
-    def expect_equal(self, value, wanted, context: str = ""):
-        if value != wanted:
-            if len(context) > 0:
-                context = "(" + context + "): "
-            self.fail(context + str(value))
+@dataclasses.dataclass
+class Codebox:
+    name: str
+    box_function: Callable[[dict], None]
 
 
 def run(*data_file_list):
@@ -55,7 +20,10 @@ def run(*data_file_list):
         codebox_set = {}
         testcase_instance = testcase_class()
         for name in testcase_class.__dict__.keys():
-            codebox_set[name] = getattr(testcase_instance, name)
+            codebox_set[name] = Codebox(
+                name=name,
+                box_function=getattr(testcase_instance, name),
+            )
         __flat_run(testcase_instance, codebox_set, data_file_list)
         return testcase_class
     return run_function

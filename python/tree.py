@@ -1,7 +1,47 @@
+import enum
+import unittest
 import yaml
 
 import python.syaml as syaml
 import python.focustree as focustree
+
+
+class FailStatus(enum.Enum):
+    PRISTINE = 0
+    FAILED = 1
+    ABORTED = 2
+    PANICKED = 3
+
+
+class SpecimenContext:
+    def __init__(self, test_case: unittest.TestCase):
+        self.test_case = test_case
+        self.slab_count = 0
+        self.slab_passed = 0
+        self.slab_failed = 0
+        self.slab_aborted = 0
+        self.slab_panicked = 0
+        self.failure_report = []
+
+        self.status = FailStatus.PRISTINE
+        self.fail_info = []
+
+    def fail(self, info: str):
+        self.status = Failed
+        if len(info) > 0:
+            s.fail_info.append(info)
+
+    def abort(self, info: str):
+        s.status = Aborted
+        if len(info) > 0:
+            s.fail_info.append(info)
+        raise Exception()
+
+    def expect_equal(self, value, wanted, context: str = ""):
+        if value != wanted:
+            if len(context) > 0:
+                context = "(" + context + "): "
+            self.fail(context + str(value))
 
 
 class TreeRoot(list["Nodule"]):
@@ -25,12 +65,12 @@ class Nodule:
     def __init__(
         self,
         file,
-        # Kind is one of "File", "Node", "Slab" -- Kind is used in error reports
         kind,
         mapping=None,
     ):
         self.file = file
         self.mapping = mapping
+        # Kind is one of "File", "Node", "Slab" -- Kind is used in error reports
         self.kind = kind
         # Location is a clickable link to the beginning of the nodule
         self.location = ""
@@ -149,12 +189,12 @@ class Nodule:
                 raise ValueError("the input entry is mendatory on slabs")
 
             if len(self.matrix) > 0:
-                noduleList = [self.clone()]
-                noduleList[0].flag = focustree.Flag.NONE
-                noduleList[0].matrix = None
-                for key, valueList in self.matrix:
-                    noduleList = multiplyList(key, valueList, noduleList)
-                self.children = noduleList
+                nodule_list = [self.clone()]
+                nodule_list[0].flag = focustree.Flag.NONE
+                nodule_list[0].matrix = None
+                for key, value_list in self.matrix.items():
+                    nodule_list = multiply_list(key, value_list, nodule_list)
+                self.children = nodule_list
                 for child in self.children:
                     child.input.update(self.input)
 
@@ -167,19 +207,69 @@ class Nodule:
             try:
                 child.populate(codebox_set, codebox, self.input, self.matrix)
                 validChildren.append(child)
-            except Exception as e:
-                print("Exception", e)
+            except ValueError as e:
+                raise
+                print("Error", e)
 
         if len(validChildren) == 0:
             raise ValueError("no valid children")
 
         self.children = validChildren
 
-        def run_codebox(self, context):
-            try:
-                self.codebox
-            except Exception as e:
-                e
+    def run_codebox(self, context: SpecimenContext):
+        try:
+            self.codebox
+        except Exception as e:
+            if context.status == FailStatus.ABORTED:
+                return
+
+            report = repr(traceback.format_exception()) + ": " + repr(traceback.extract_tb(exc_traceback))
+
+            context.status = FailStatus.PANICKED
+            context.fail_info.append(report)
+
+    def clone(self):
+        other = Nodule(self.file, self.kind, self.mapping)
+        other.location = self.location
+        other.flag = self.flag
+        other.name = self.name
+        other.children = self.children
+        other.codebox = self.codebox
+        other.input = dict(self.input)
+        other.matrix = self.matrix
+        return other
 
 def read_flag(node: yaml.Node):
-    print("read_flag", node)
+    syaml.assert_is_mapping(node)
+    flag_node = syaml.map_try_get_value(node, "flag")
+
+    if flag_node is None:
+        return focustree.Flag.NONE
+
+    name = ""
+    both = False
+    for word in syaml.get_string(node).split():
+        if word == "FOCUS":
+            if flag == focustree.Flag.SKIP:
+                both = True
+            flag = focustree.Flag.FOCUS
+            name = word
+        if word == "PENDING":
+            if flag == focustree.Flag.FOCUS:
+                both = True
+            flag = focustree.Flag.FOCUS
+            name = word
+        if word.isupper():
+            print(f"Warning: Unrecognised all uppercase flag \"{word}\". It has been ignored.")
+    if both:
+        print(f"Warning: both FOCUS and PENDING have been found among the flags of a node. {name} has been kept.")
+
+def multiply_list(key, value_list, nodule_list):
+    result_list = []
+    for nodule in nodule_list:
+        for k, value in enumerate(value_list):
+            other = nodule.clone()
+            other.input[key] = value
+            other.location = "%s(%s[%d])" % (other.location, key, k)
+            result_list.append(other)
+    return result_list
