@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "specimen"
+version = "0.1.0"
+description = ""
+authors = ["Mathieu CAROFF <mathieu.caroff@free.fr"]
+
+[tool.poetry.dependencies]
+python = "^3.10.2"
+PyYAML = "^6.0"
+
+[tool.poetry.dev-dependencies]
+ipython = "^7.13.0"
+black = "^19.10b0"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
