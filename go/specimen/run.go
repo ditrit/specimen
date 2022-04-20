@@ -85,7 +85,7 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 	// after all its children have been checked. If a node which has FOCUS-ed
 	// children is FOCUS-ed too, its FOCUS-ed flag is ignored and a warning is
 	// issued.
-	selectedLeaves := focustree.ExctractSelectedLeaves(validTree)
+	selectedLeaves := focustree.ExtractSelectedLeaves(validTree)
 
 	startTime := time.Now()
 

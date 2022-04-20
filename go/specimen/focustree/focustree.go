@@ -15,14 +15,14 @@ type Node interface {
 	Warning(info string)
 }
 
-// ExctractSelectedLeaves goes through the tree and find leaves
+// ExtractSelectedLeaves goes through the tree and find leaves
 // whose data should be processed according to the flag
 // (FOCUS, PENDING)
-func ExctractSelectedLeaves(tree Node) []Node {
+func ExtractSelectedLeaves(tree Node) []Node {
 	focusedNodeSlice := []Node{}
 	findFocusedNodes(tree, &focusedNodeSlice)
 	if len(focusedNodeSlice) == 0 {
-		focusedNodeSlice = append(focusedNodeSlice, tree)
+		focusedNodeSlice = []Node{tree}
 	}
 	leafSlice := []Node{}
 	for _, node := range focusedNodeSlice {

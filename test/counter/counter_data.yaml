@@ -3,21 +3,27 @@ content:
   - name: value_check_initial
     input:
       expected_count: 0
+    # -> 1
   - name: value_check_reinitial
     input:
       expected_count: 1
+    # -> 2
   - name: matrix_letter
     matrix:
       letter: [a, b, c]
     input: {}
+    # (2 + 3) -> 5
   - name: value_check
     input:
       expected_count: 5
+    # -> 6
   - name: matrix_letter_digit
     matrix:
       letter: [a, b, c]
       digit: [1, 2, 3, 4, 5]
     input: {}
+    # (6 + 3 * 5) -> 21
   - name: value_check_second
     input:
       expected_count: 21
+    # -> 22

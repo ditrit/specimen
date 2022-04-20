@@ -86,7 +86,7 @@ func (n *Nodule) InitializeFile() (err error) {
 		return
 	}
 	if !syc.IsMapping(n.Mapping) {
-		err = fmt.Errorf("the root of the document is expected to be a yaml mapping")
+		err = fmt.Errorf("the root of the document must be a yaml mapping")
 		return
 	}
 
@@ -128,7 +128,7 @@ func (n *Nodule) Initialize() (err error) {
 
 	// /\ content node processing
 	// kind
-	if len(contentNode.Content) > 0 && n.Kind == "Leaf" {
+	if len(contentNode.Content) > 0 && n.Kind == "Slab" {
 		n.Kind = "Node"
 	}
 
@@ -138,7 +138,7 @@ func (n *Nodule) Initialize() (err error) {
 		return
 	}
 	for _, node := range contentNode.Content {
-		child := Nodule{File: n.File, Kind: "Leaf", Mapping: node}
+		child := Nodule{File: n.File, Kind: "Slab", Mapping: node}
 		err := child.Initialize()
 		if err != nil {
 			log.Printf("%s -- this has been ignored\n", err.Error())
