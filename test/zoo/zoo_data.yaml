@@ -48,15 +48,14 @@ content:
   - 
     flag: FOCUS
     name: combined input check
+    box: animalkind
     input:
       leg: 4
       horn: 0
     content:
-      - box: animalkind
-        input:
+      - input:
           tail: true
           name: earthpony
-      - box: animalkind
-        input:
+      - input:
           horn: 2
           name: deer

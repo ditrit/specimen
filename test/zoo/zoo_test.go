@@ -34,7 +34,7 @@ func TestFocusZoo(t *testing.T) {
 					s.ExpectEqual(input["leg"].(int), 4, "deer leg")
 				} else if name == "earthpony" {
 					s.ExpectEqual(input["horn"].(int), 0, "earthpony horn")
-					s.ExpectEqual(input["leg"].(int), 4, "earthpony leg")
+					s.ExpectEqual(input["leg"].(int), 4, "earthpony legs")
 				} else {
 					s.Fail("unknown animal name: " + name)
 				}

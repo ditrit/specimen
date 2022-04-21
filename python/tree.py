@@ -1,4 +1,6 @@
 import enum
+import sys
+import traceback
 import unittest
 import yaml
 
@@ -10,7 +12,7 @@ class FailStatus(enum.Enum):
     PRISTINE = 0
     FAILED = 1
     ABORTED = 2
-    PANICKED = 3
+    RAISED = 3
 
 
 class SpecimenContext:
@@ -20,7 +22,7 @@ class SpecimenContext:
         self.slab_passed = 0
         self.slab_failed = 0
         self.slab_aborted = 0
-        self.slab_panicked = 0
+        self.slab_failed = 0
         self.failure_report = []
 
         self.status = FailStatus.PRISTINE
@@ -57,7 +59,7 @@ class TreeRoot(list["Nodule"]):
     def get_flag(self) -> focustree.Flag:
         return focustree.Flag.NONE
 
-    def warning(info: str):
+    def warning(self, info: str):
         print("Warning: TreeRoot: %s" % info)
 
 
@@ -91,7 +93,7 @@ class Nodule:
     def get_flag(self) -> focustree.Flag:
         return self.flag
 
-    def warning(info: str) -> focustree:
+    def warning(self, info: str) -> focustree:
         print("Warning: %s %s(%s): %s" % (self.kind, self.name, self.location, info))
 
     def initialize_file(self):
@@ -102,7 +104,7 @@ class Nodule:
 
     def initialize(self):
         # location
-        self.location = f"{self.file.path}:{self.mapping.start_mark.line}:{self.mapping.start_mark.column}"
+        self.location = f"{self.file.path}:{self.mapping.start_mark.line+1}:{self.mapping.start_mark.column+1}"
 
         # flag
         self.flag = read_flag(self.mapping)
@@ -218,14 +220,19 @@ class Nodule:
 
     def run_codebox(self, context: SpecimenContext):
         try:
-            self.codebox
+            self.codebox.box_function(**self.input)
         except Exception as e:
             if context.status == FailStatus.ABORTED:
                 return
+            if isinstance(e, AssertionError):
+                context.status = FailStatus.FAILED
+                context.fail_info.append(str(e))
+                return
 
-            report = repr(traceback.format_exception()) + ": " + repr(traceback.extract_tb(exc_traceback))
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            report = repr(traceback.format_exception(e)) + ": " + repr(traceback.extract_tb(exc_traceback))
 
-            context.status = FailStatus.PANICKED
+            context.status = FailStatus.RAISED
             context.fail_info.append(report)
 
     def clone(self):
@@ -242,27 +249,31 @@ class Nodule:
 def read_flag(node: yaml.Node):
     syaml.assert_is_mapping(node)
     flag_node = syaml.map_try_get_value(node, "flag")
+    flag = focustree.Flag.NONE
 
     if flag_node is None:
-        return focustree.Flag.NONE
+        return flag
 
     name = ""
     both = False
-    for word in syaml.get_string(node).split():
+    sentence = syaml.get_string(flag_node).split()
+    for word in sentence:
         if word == "FOCUS":
             if flag == focustree.Flag.SKIP:
                 both = True
             flag = focustree.Flag.FOCUS
             name = word
-        if word == "PENDING":
+        elif word == "PENDING":
             if flag == focustree.Flag.FOCUS:
                 both = True
-            flag = focustree.Flag.FOCUS
+            flag = focustree.Flag.SKIP
             name = word
-        if word.isupper():
+        elif word.isupper():
             print(f"Warning: Unrecognised all uppercase flag \"{word}\". It has been ignored.")
     if both:
         print(f"Warning: both FOCUS and PENDING have been found among the flags of a node. {name} has been kept.")
+
+    return flag
 
 def multiply_list(key, value_list, nodule_list):
     result_list = []
@@ -273,3 +284,12 @@ def multiply_list(key, value_list, nodule_list):
             other.location = "%s(%s[%d])" % (other.location, key, k)
             result_list.append(other)
     return result_list
+
+
+class NoduleError(ValueError):
+    def __init__(self, nodule: Nodule, message: str):
+        self.nodule = nodule
+        super().__init__(message)
+    def __repr__(self):
+        n = self.nodule
+        return f"{n.kind} {n.name}({n.location}): {super().__repr__()}"

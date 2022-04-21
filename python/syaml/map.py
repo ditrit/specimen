@@ -22,6 +22,7 @@ def get_int(node) -> int:
 
 def map_assert_string_keys_among(node: yaml.Node, accept_slice: list[str]):
     print("map_assert_string_keys_among", node)
+    raise NotImplementedError()
 
 def map_get_any(node: yaml.Node, key: str):
     return extract_content(map_get_value(node, key))

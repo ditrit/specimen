@@ -36,7 +36,7 @@ def __flat_run(t: unittest.TestCase, codebox_set: dict[str, Codebox], data_file_
 
     tree = TreeRoot()
     for file in data_file_list:
-        nodule = Nodule(file=file, kind="file")
+        nodule = Nodule(file=file, kind="File")
         nodule.initialize_file()
         tree.append(nodule)
 
@@ -60,7 +60,7 @@ def __flat_run(t: unittest.TestCase, codebox_set: dict[str, Codebox], data_file_
         # - Recover from any panic that might arise during the codebox call
         # - Check the output if an expected output is provided
         # Nodule Start
-        s.status = "Pristine"
+        s.status = FailStatus.PRISTINE
         s.fail_info = []
 
         # Nodule Run
@@ -68,47 +68,49 @@ def __flat_run(t: unittest.TestCase, codebox_set: dict[str, Codebox], data_file_
 
         # Nodule End
         s.slab_count += 1
-        attribute_name = dict(
-            Pristine="slab_passed",
-            Failed="slab_failed",
-            Aborted="slab_aborted",
-            Panicked="slab_panicked",
-        )[s.status]
+        attribute_name = {
+            FailStatus.PRISTINE: "slab_passed",
+            FailStatus.FAILED: "slab_failed",
+            FailStatus.ABORTED: "slab_aborted",
+            FailStatus.RAISED: "slab_failed",
+        }[s.status]
         setattr(s, attribute_name, getattr(s, attribute_name) + 1)
         
         # summarize the failures
-        if s.status != "Pristine":
-            slab_info = "%s(%s)" % (slab.Name, slab.Location)
+        if s.status != FailStatus.PRISTINE:
+            slab_info = "%s(%s)" % (slab.name, slab.location)
 
-            info = "; ".join(s.failInfo)
+            databox_info = ""
+            if len(slab.name) > 0:
+                databox_info = "[nodule %s]" % slab.name
 
-            prefix = dict(
-            Failed="FAIL%s" % databox_info,
-            Aborted="ABORT",
-            Panicked="PANIC",
-            )[s.status]
+            prefix = {
+                FailStatus.FAILED: "FAIL%s" % databox_info,
+                FailStatus.ABORTED: "ABORT",
+                FailStatus.RAISED: "RAISE",
+            }[s.status]
 
             if s.status == "Failed":
                 databox_info = ""
                 if len(slab.name) > 0:
                     databox_info = "[nodule %s]" % slab.name
 
-            message = "%s[codebox: %s][slab: %s]: %s" % (prefix, slab.Codebox.Name, slabInfo, info)
+            info = "; ".join(s.fail_info)
+
+            message = "%s[codebox: %s][slab: %s]: %s" % (prefix, slab.codebox.name, slab_info, info)
 
             s.failure_report.append(message)
 
     duration = datetime.now() - start_time
 
-    if len(s.failure_report) > 0:
-        s.t.Fail()
-        print("\n".join(s.failure_report))
     outcome = "SUCCESS"
     if len(s.failure_report) > 0:
+        print("\n".join(s.failure_report))
         outcome = "FAILURE"
     print(
         ("Ran {} slabs in {}\n"
         "{} -- {} Passed | {} Failed | {} Aborted | {} Raised").format(
             s.slab_count, duration,
-            outcome, s.slab_passed, s.slab_failed, s.slab_aborted, s.slab_panicked,
+            outcome, s.slab_passed, s.slab_failed, s.slab_aborted, s.slab_failed,
         )
     )
