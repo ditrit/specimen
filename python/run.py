@@ -72,7 +72,7 @@ def __flat_run(t: unittest.TestCase, codebox_set: dict[str, Codebox], data_file_
             FailStatus.PRISTINE: "slab_passed",
             FailStatus.FAILED: "slab_failed",
             FailStatus.ABORTED: "slab_aborted",
-            FailStatus.RAISED: "slab_failed",
+            FailStatus.RAISED: "slab_raised",
         }[s.status]
         setattr(s, attribute_name, getattr(s, attribute_name) + 1)
         
@@ -111,6 +111,6 @@ def __flat_run(t: unittest.TestCase, codebox_set: dict[str, Codebox], data_file_
         ("Ran {} slabs in {}\n"
         "{} -- {} Passed | {} Failed | {} Aborted | {} Raised").format(
             s.slab_count, duration,
-            outcome, s.slab_passed, s.slab_failed, s.slab_aborted, s.slab_failed,
+            outcome, s.slab_passed, s.slab_failed, s.slab_aborted, s.slab_raised,
         )
     )

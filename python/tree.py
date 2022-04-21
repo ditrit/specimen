@@ -22,7 +22,7 @@ class SpecimenContext:
         self.slab_passed = 0
         self.slab_failed = 0
         self.slab_aborted = 0
-        self.slab_failed = 0
+        self.slab_raised = 0
         self.failure_report = []
 
         self.status = FailStatus.PRISTINE
@@ -230,7 +230,7 @@ class Nodule:
                 return
 
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            report = repr(traceback.format_exception(e)) + ": " + repr(traceback.extract_tb(exc_traceback))
+            report = "".join(map(str,traceback.format_exception(e)))
 
             context.status = FailStatus.RAISED
             context.fail_info.append(report)
