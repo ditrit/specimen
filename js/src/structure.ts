@@ -3,7 +3,7 @@ import { FlagType } from "./focustree/focustree"
 
 export type FailStatus = "Pristine" | "Failed" | "Aborted" | "Panicked"
 
-export interface S {
+export interface Context {
     slabCount: number
     slabPassed: number
     slabFailed: number
@@ -19,7 +19,7 @@ export interface File {
 }
 
 export interface BoxFunction {
-    (s: S, input: Record<string, any>): void
+    (s: Context, input: Record<string, any>): void
 }
 
 export interface Codebox {

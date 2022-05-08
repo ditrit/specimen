@@ -1,4 +1,6 @@
-import * as specimen from "../../js/dist/index.js";
+const zoo = require("./zoo.js");
+
+const specimen = require("../../js/dist");
 
 specimen.run(
   specimen.makeCodeboxSet({

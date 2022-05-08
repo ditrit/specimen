@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "repository": "https://github.com/mathieucaroff/cellex",
   "author": "Mathieu CAROFF <mathieu.caroff@free.fr>",
-  "license": "MPL",
+  "license": "MPL-2.0",
   "scripts": {
     "check": "tsc --noEmit",
     "checkwatch": "tsc --noEmit --watch",
-    "build": "parcel build src/main.ts"
+    "build": "parcel build src/index.ts",
+    "watch": "parcel watch src/index.ts"
   },
   "dependencies": {
     "yaml": "^2.0.1"
@@ -15,6 +16,7 @@
   "devDependencies": {
     "@types/node": "^17.0.31",
     "@types/yaml": "^1.9.7",
+    "parcel": "^2.5.0",
     "prettier": "^2.6.2",
     "typescript": "^4.6.4"
   }

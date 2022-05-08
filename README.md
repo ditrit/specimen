@@ -176,6 +176,31 @@ func (b *Book) GetPage() int {
 }
 ```
 
+## Running the examples
+
+```sh
+# golang
+go test ./test/counter ./test/danger ./test/novel ./test/zoo
+# or
+go test test/counter/counter_test.go
+go test test/danger/danger_test.go
+go test test/novel/novel_test.go
+go test test/zoo/zoo_test.go
+
+# python
+python test/counter/counter_test.py
+python test/novel/novel_test.py
+python test/zoo/zoo_test.py
+
+# js
+cd js
+yarn parcel build src/index.ts
+cd ..
+node test/counter/counter_test.js
+node test/novel/novel_test.js
+node test/zoo/zoo_test.js
+```
+
 ## Yaml Schema
 
 The content of a yaml test data file must match the `main` rule of the lidy schema below:

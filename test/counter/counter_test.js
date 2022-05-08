@@ -1,4 +1,4 @@
-import * as specimen from "../../js/dist/index.js";
+const specimen = require("../../js/dist");
 
 let counter = 0;
 
