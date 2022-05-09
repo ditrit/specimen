@@ -12,5 +12,5 @@ specimen.run(
       counter += 1;
     },
   }),
-  [specimen.readLocalFile("counter_data.yaml")]
+  [specimen.readLocalFile("counter_data.yaml", __dirname)]
 );

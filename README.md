@@ -194,7 +194,8 @@ python test/zoo/zoo_test.py
 
 # js
 cd js
-yarn parcel build src/index.ts
+# yarn parcel build src/index.ts
+yarn tsc
 cd ..
 node test/counter/counter_test.js
 node test/novel/novel_test.js

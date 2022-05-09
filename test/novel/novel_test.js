@@ -32,6 +32,6 @@ let codeboxSet = specimen.makeCodeboxSet({
 });
 
 specimen.run(codeboxSet, [
-  specimen.readLocalFile("novel_data.yaml"),
-  specimen.readLocalFile("novel_data_with_alias.yaml"),
+  specimen.readLocalFile("novel_data.yaml", __dirname),
+  specimen.readLocalFile("novel_data_with_alias.yaml", __dirname),
 ]);

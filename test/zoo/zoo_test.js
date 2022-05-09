@@ -30,5 +30,5 @@ specimen.run(
       }
     },
   }),
-  [specimen.readLocalFile("zoo_data.yaml")]
+  [specimen.readLocalFile("zoo_data.yaml", __dirname)]
 );

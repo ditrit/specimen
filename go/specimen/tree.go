@@ -178,11 +178,10 @@ func (n *Nodule) Populate(
 	if inputNode != nil {
 		if !syc.IsMapping(inputNode) {
 			return n.Errorf("the value of \"input\" must be a mapping")
-		} else {
-			localInput := syc.ExtractContent(inputNode).(map[string]interface{})
-			for k, v := range localInput {
-				n.Input[k] = v
-			}
+		}
+		localInput := syc.ExtractContent(inputNode).(map[string]interface{})
+		for k, v := range localInput {
+			n.Input[k] = v
 		}
 	}
 
@@ -196,7 +195,9 @@ func (n *Nodule) Populate(
 			return n.Errorf("the value of \"matrix\" must be a mapping")
 		}
 
-		n.Matrix = map[string][]interface{}{}
+		if n.Matrix == nil {
+			n.Matrix = map[string][]interface{}{}
+		}
 
 		for k := 0; k < len(matrixNode.Content); k += 2 {
 			key := syc.GetString(matrixNode.Content[k])

@@ -42,9 +42,8 @@ def __flat_run(t: unittest.TestCase, codebox_set: dict[str, Codebox], data_file_
 
     valid_tree = TreeRoot()
     for nodule in tree:
-        nodule.populate(codebox_set)
         try:
-            pass
+            nodule.populate(codebox_set)
         except Exception as e:
             print("Exception", e)
         else:

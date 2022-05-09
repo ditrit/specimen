@@ -1,17 +1,9 @@
 import { Scalar, YAMLMap, YAMLSeq } from "yaml"
-import { FlagType } from "./focustree/focustree"
+import { Nodule, SpecimenContext } from "./tree"
 
-export type FailStatus = "Pristine" | "Failed" | "Aborted" | "Panicked"
+export type FailStatus = "Pristine" | "Failed" | "Aborted" | "Threw"
 
-export interface Context {
-    slabCount: number
-    slabPassed: number
-    slabFailed: number
-    slabAborted: number
-    slabPanicked: number
-    failureReport: string[]
-    status: FailStatus
-}
+export type NoduleKind = "File" | "Node" | "Slab"
 
 export interface File {
     path: string
@@ -19,7 +11,7 @@ export interface File {
 }
 
 export interface BoxFunction {
-    (s: Context, input: Record<string, any>): void
+    (s: SpecimenContext, input: Record<string, any>): void
 }
 
 export interface Codebox {
@@ -27,19 +19,4 @@ export interface Codebox {
     boxFunction: BoxFunction
 }
 
-export type TreeRoot = Nodule[]
-
 export type YAMLNode = Scalar | YAMLMap | YAMLSeq
-
-export interface Nodule {
-    file: File
-    mapping: YAMLNode
-    kind: "File" | "Node" | "Slab"
-    location: string
-    flag: FlagType
-    name?: string
-    children: Nodule[]
-    codebox: Codebox
-    input: Record<string, any>
-    matrix: Record<string, any[]>
-}

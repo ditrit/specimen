@@ -144,12 +144,10 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 	duration := time.Since(startTime)
 
 	// Reporting what has been saved in s
+	var outcome = "SUCCESS"
 	if len(s.failureReport) > 0 {
 		s.t.Fail()
 		log.Println(strings.Join(s.failureReport, "\n"))
-	}
-	var outcome = "SUCCESS"
-	if len(s.failureReport) > 0 {
 		outcome = "FAILURE"
 	}
 	log.Printf(

@@ -31,12 +31,12 @@ class SpecimenContext:
     def fail(self, info: str):
         self.status = Failed
         if len(info) > 0:
-            s.fail_info.append(info)
+            self.fail_info.append(info)
 
     def abort(self, info: str):
-        s.status = Aborted
+        self.status = Aborted
         if len(info) > 0:
-            s.fail_info.append(info)
+            self.fail_info.append(info)
         raise Exception()
 
     def expect_equal(self, value, wanted, context: str = ""):
@@ -99,7 +99,7 @@ class Nodule:
     def initialize_file(self):
         self.mapping = yaml.compose(self.file.content)
         if not syaml.is_mapping(self.mapping):
-            raise RuntimeError("the root of the yaml document is must be a yaml mapping")
+            raise RuntimeError("the root of the yaml document must be a yaml mapping")
         self.initialize()
 
     def initialize(self):
@@ -125,7 +125,7 @@ class Nodule:
         if not syaml.is_sequence(content_node):
             raise TypeError("the \"content\" value must be a yaml sequence")
         # kind
-        if syaml.is_sequence(content_node) and len(content_node.value) > 0 and self.kind == "Slab":
+        if len(content_node.value) > 0 and self.kind == "Slab":
             self.kind = "Node"
 
         # children
