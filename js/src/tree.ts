@@ -261,10 +261,11 @@ export class Nodule implements focustree.Node {
             }
 
             let report = new Error().stack
-            let info = `\n>   ` + report?.replace("\n", "\n>   ")
+            let info = `\n>   ` + report?.replace(/\n/g, "\n>   ")
             info += "\n" + e
 
             context.status = "Threw"
+            context.failInfo.push(info)
         }
     }
 
