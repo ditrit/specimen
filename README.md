@@ -2,7 +2,7 @@
 
 _Yaml-based data-driven testing_
 
-Specimen is a yaml data format for data-driven testing. This enforces separation between _feature being tested_ the _data_ used for testing.
+Specimen is a data-driven testing library as well as a yaml data format. It enforces separation between the _feature being tested_ and the _data_ used for testing.
 
 It comes with a golang implementation for loading the data, checking its format,
 running your golang _test boxes_ (called _code boxed_) and comparing the result with the expected one.
