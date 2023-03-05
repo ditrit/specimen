@@ -23,14 +23,14 @@ func VirtualFile(imaginary_path string, content []byte) File {
 	}
 }
 
-// VirtualFileDedent dedents the givent content and creates a specimen.File
+// VirtualFileDedent dedents the given content and creates a specimen.File
 func VirtualFileDedent(imaginary_path string, content []byte) File {
 	return VirtualFile(imaginary_path, dedent(content))
 }
 
 // dedent removes common leading **spaces** (not tabs) from the lines of a given text
-// note: if the first line is empty it is removed; if non-empty, it is excluded from
-//       the lines undergoing space trimming
+// note: empty leading newlines are removed. Also, if the first line is non-empty,
+// it is excluded from the lines undergoing space trimming.
 func dedent(text []byte) []byte {
 	// step one: remove leading newlines
 	for k, c := range text {

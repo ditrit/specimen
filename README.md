@@ -4,10 +4,9 @@ _Yaml-based data-driven testing_
 
 Specimen is a data-driven testing library as well as a yaml data format. It enforces separation between the _feature being tested_ and the _data_ used for testing.
 
-It comes with a golang implementation for loading the data, checking its format,
-running your golang _test boxes_ (called _code boxed_) and comparing the result with the expected one.
+It comes with a **Golang**, a **Python** and a **JS** implementation for loading the data, checking its format, running your _test boxes_ (called _code boxed_) and comparing the result with the expected one.
 
-It supports using the `FOCUS` and `PENDING` flag in the data to run only part of the test data.
+It supports using the `FOCUS` and `PENDING` flag in the data tree to run only part of the test data.
 
 ## Overview
 
@@ -16,7 +15,7 @@ It supports using the `FOCUS` and `PENDING` flag in the data to run only part of
 - A **Codebox** is a user-defined named function passed to `specimen.run`. It serves as an adaptator between Specimen and the user code being tested. It also runs the verification steps after the code being tested has finished.
 - A **Slab** is a chunk of data to be loaded into a codebox. They are the leaves of the yaml files data tree that Specimen processes.
 
-## Getting started
+## Getting started with the Golang implementation
 
 To get started, create a directory `it/` and the three files `it.go` `it_test.go` and `it_testdata.yaml`. For each file, copy the content of linked section. Finally, run `go test` in the `it/` directory.
 
@@ -88,11 +87,11 @@ content:
       expected_result: 44
 ```
 
-The input entry is required and must be a map. It is passed to the test box. The output entry may be any value but it must only be present if the box returns a value. The supported flags are FOCUS and PENDING - the uppercase is mandatory. This two flags are supported on all nodes of the data tree.
+The input entry is required and must be a map. It is passed to the test box. The output entry may be any value but it must only be present if the box returns a value. The supported flags are FOCUS and PENDING - the uppercase is mandatory. These two flags are supported on all nodes of the data tree.
 
 ## Code box
 
-A code box is an **adapter** between the parsed data and the library the code being tested. It takes as input the testing context `s` and the **input map**. A code box looks like this:
+A code box is an **adapter** between the parsed data and the library code being tested. It takes as input the testing context `s` and the **input map**. A code box looks like this:
 
 ```go
 package it_test
@@ -225,7 +224,7 @@ nodule:
     # report if present
     name: string
     # if the flag contains FOCUS or PENDING the nodule and its desendents will be
-    # prioritized or ignored
+    # prioritized or skipped; any other value will be ignored
     flag: string
     # input contains the entries passed to the box
     input: {_mapOf: {string: any}}
