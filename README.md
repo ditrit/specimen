@@ -52,11 +52,9 @@ The yaml data file looks like this:
 
 ```yaml
 content:
-  -
-    box: turn_page
+  - box: turn_page
     content:
-      -
-        flag: FOCUS
+      - flag: FOCUS
         input:
           book:
             title: aleph
@@ -67,8 +65,7 @@ content:
             title: aleph
             left_page: 8
             size: 90
-      -
-        flag: PENDING
+      - flag: PENDING
         input:
           book:
             title: aleph
@@ -76,8 +73,7 @@ content:
             size: 90
           turn_page_count: 4
           expected_left_page: 8
-  -
-    flag: FOCUS
+  - flag: FOCUS
     box: get_page
     input:
       book:
@@ -184,20 +180,24 @@ go test ./test/counter ./test/danger ./test/novel ./test/zoo
 go test test/counter/counter_test.go
 go test test/danger/danger_test.go
 go test test/novel/novel_test.go
+go test test/novel/nullValue_test.go
 go test test/zoo/zoo_test.go
 
 # python
 python test/counter/counter_test.py
 python test/novel/novel_test.py
+python test/novel/nullValue_test.py
 python test/zoo/zoo_test.py
 
 # js
 cd js
+yarn install
 # yarn parcel build src/index.ts
 yarn tsc
 cd ..
 node test/counter/counter_test.js
 node test/novel/novel_test.js
+node test/novel/nullValue_test.js
 node test/zoo/zoo_test.js
 ```
 
