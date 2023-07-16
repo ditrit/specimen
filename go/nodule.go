@@ -97,7 +97,7 @@ func (n *Nodule) Populate(dataMatrix map[string][]string, dataOrder []string) (e
 
 	for k := 0; k < len(n.YamlNode.Content)/2; k += 1 {
 		key := n.YamlNode.Content[2*k]
-		if key.Value == "content" {
+		if key.Value == "content" || key.Value == "about" {
 			continue
 		}
 		value := n.YamlNode.Content[2*k+1]

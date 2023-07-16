@@ -4,16 +4,17 @@ _Yaml-based data-driven testing_
 
 Specimen is a data-driven testing library as well as a yaml data format. It enforces separation between the _feature being tested_ and the _data_ used for testing.
 
-It comes with a **Golang**, a **Python** and a **JS** implementation for loading the data, checking its format, running your _test boxes_ (called _code boxed_) and comparing the result with the expected one.
+It comes with a **Golang**, a **Python** and a **JS** implementation for loading the data, checking its format, running your _test box_ and comparing the result with the expected one.
 
-It supports using the `FOCUS` and `PENDING` flag in the data tree to run only part of the test data.
+It supports using the `FOCUS` and `PENDING` flags in the data tree to run only parts of the test data.
 
 ## Overview
 
 ![overview of the way the specimen library works](doc/specimen-overview.svg)
 
-- A **Codebox** is a user-defined named function passed to `specimen.run`. It serves as an adaptator between Specimen and the user code being tested. It also runs the verification steps after the code being tested has finished.
-- A **Slab** is a chunk of data to be loaded into a codebox. They are the leaves of the yaml files data tree that Specimen processes.
+- A **Test Box** is a user-defined function passed to `specimen.run`. It serves as an adaptator between Specimen and the user code being tested. Indeed, it prepares the data for testing, runs the code being tested and perform the checks on the code result once it has finished.
+- A **Slab** is a leaf of the yaml files data tree that Specimen processes.
+- A **Tile** is a chunk of data to be loaded into a test box. When test matrices are used, a slab will produce multiple tiles.
 
 ## Getting started with the Golang implementation
 
@@ -52,92 +53,60 @@ The yaml data file looks like this:
 
 ```yaml
 content:
-  - box: turn_page
+  - box: zoo
     content:
-      - flag: FOCUS
-        input:
-          book:
-            title: aleph
-            left_page: 0
-            size: 90
-          turn_page_count: 4
-          expected_result:
-            title: aleph
-            left_page: 8
-            size: 90
-      - flag: PENDING
-        input:
-          book:
-            title: aleph
-            left_page: 0
-            size: 90
-          turn_page_count: 4
-          expected_left_page: 8
-  - flag: FOCUS
-    box: get_page
-    input:
-      book:
-        title: aleph
-        left_page: 44
-        size: 90
-      expected_result: 44
+      - name: horse
+        animal: horse
+        expected_result: horse
+      - name: parasprite # this slab should be ignored
+        flag: PENDING
+        animal: parasprite
+  - box: zoo
+    name: zebra
+    animal: zebra
+    expected_result: horse zebra
+  - name: animal matrix
+    box: zoo
+    animal: [mouse, cat, dog]
+  - name: matrix check
+    box: zoo
+    animal: wolf
+    expected_result: horse zebra mouse cat dog wolf
 ```
 
-The input entry is required and must be a map. It is passed to the test box. The output entry may be any value but it must only be present if the box returns a value. The supported flags are FOCUS and PENDING - the uppercase is mandatory. These two flags are supported on all nodes of the data tree.
+## Test box
 
-## Code box
-
-A code box is an **adapter** between the parsed data and the library code being tested. It takes as input the testing context `s` and the **input map**. A code box looks like this:
+A test box is an **adapter** between the parsed data and the library code being tested. It takes as input the testing context `s` and the **input map**. A code box looks like this:
 
 ```go
 package it_test
 
-import (
-    "it"
-    "testing"
+package zoo_test
 
-    "github.com/ditrit/specimen/go/specimen"
+import (
+	"strconv"
+	"testing"
+
+	specimen "github.com/ditrit/specimen/go"
+	"github.com/ditrit/specimen/test/zoo"
 )
 
-var codeboxSet = specimen.MakeCodeboxSet(map[string]specimen.BoxFunction{
-    "turn_page": func(s *specimen.S, input specimen.Dict) {
-        book_data := input["book"].(map[string]interface{})
-        book := it.Book{
-            Title:    book_data["title"].(string),
-            LeftPage: book_data["left_page"].(int),
-            Size:     book_data["size"].(int),
-        }
-        book.TurnPage(input["turn_page_count"].(int))
-
-        s.ExpectEqual(
-            specimen.Dict{
-                "title":     book.Title,
-                "left_page": book.LeftPage,
-                "size":      book.Size,
-            },
-            input["expected_result"].(specimen.Dict),
-            "result comparison",
-        )
-    },
-    "get_page": func(s *specimen.S, input specimen.Dict) {
-        book_data := input["book"].(map[string]interface{})
-        book := it.Book{
-            Title:    book_data["title"].(string),
-            LeftPage: book_data["left_page"].(int),
-            Size:     book_data["size"].(int),
-        }
-        s.ExpectEqual(
-            book.GetPage(),
-            input["expected_result"].(int),
-            "result comparison",
-        )
-    },
-})
 
 func TestIt(t *testing.T) {
     specimen.Run(
         t,
-        codeboxSet,
+        func(s *specimen.S, input specimen.Dict) {
+            animal := input["animal"]
+            expected := input["expected_result"]
+
+            if len(animal) > 0 {
+                output := zoo.AddAnimal(animal)
+
+                if len(expected) > 0 {
+                    s.ExpectEqual(output, expected, "result comparison")
+                }
+            }
+		    },
         []specimen.File{
             specimen.ReadLocalFile("it_testdata.yaml"),
         },
@@ -148,26 +117,17 @@ func TestIt(t *testing.T) {
 ## Example package code
 
 ```go
-package it
+package zoo
 
-type Book struct {
-    Title    string
-    LeftPage int
-    Size     int
-}
+import "strings"
 
-func (b *Book) TurnPage(count int) {
-    b.LeftPage += 2 * count
+type Zoo []string
 
-    if b.LeftPage < 0 {
-        b.LeftPage = 0
-    } else if b.LeftPage >= b.Size {
-        b.LeftPage = b.Size - 1
-    }
-}
+var zoo Zoo
 
-func (b *Book) GetPage() int {
-    return b.LeftPage
+func AddAnimal(animal string) string {
+	zoo = append(zoo, animal)
+	return strings.Join(zoo, " ")
 }
 ```
 
@@ -237,6 +197,9 @@ nodule:
     # have the flag "FOCUS"
     flag:
       _in: ["PENDING", "FOCUS"]
+    # abount can contain any data: it will not be checked by the parser, and it
+    # will not appear in the data passed to the box function
+    about: any
   # all the entries of the mapping will be added to the descendant slabs of
   # this nodule and then passed to the code box, except for the `content` entry
   _mapOf: { string: tip }
