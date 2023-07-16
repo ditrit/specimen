@@ -2,7 +2,7 @@ package novel
 
 type Book struct {
 	Title    string
-	LeftPage int
+	LeftPage int `yaml:"left_page"`
 	Size     int
 }
 
