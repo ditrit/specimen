@@ -1,4 +1,4 @@
-module github.com/ditrit/specimen
+module github.com/ditrit/specimen/go
 
 go 1.17
 

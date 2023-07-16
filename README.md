@@ -12,7 +12,7 @@ It supports using the `FOCUS` and `PENDING` flags in the data tree to run only p
 
 ![overview of the way the specimen library works](doc/specimen-overview.svg)
 
-- A **Test Box** is a user-defined function passed to `specimen.run`. It serves as an adaptator between Specimen and the user code being tested. Indeed, it prepares the data for testing, runs the code being tested and perform the checks on the code result once it has finished.
+- A **Test Box** is a user-defined function passed to `specimen.run`. It serves as an adaptator between Specimen and the user code being tested. Indeed, it prepares the data for testing, runs the code being tested and performs the checks on the code result once it has finished.
 - A **Slab** is a leaf of the yaml files data tree that Specimen processes.
 - A **Tile** is a chunk of data to be loaded into a test box. When test matrices are used, a slab will produce multiple tiles.
 
@@ -117,7 +117,7 @@ func TestIt(t *testing.T) {
 ## Example package code
 
 ```go
-package zoo
+package it
 
 import "strings"
 
@@ -168,7 +168,8 @@ The content of a yaml test data file must match the `main` rule of the lidy sche
 ```yaml
 main: nodule
 
-# scalar is any yaml scalar
+# scalar is any yaml scalar. Please note that whatever the type it, it will
+# appear as a string in the tile Dict.
 scalar:
   _oneOf:
     - string
