@@ -8,14 +8,14 @@ import (
 
 // This test ensures that the null value does not crash the library engine
 
+func nullValue(s *specimen.S, input specimen.Dict) {
+	_ = input["nullValue"]
+}
+
 func TestNullValue(t *testing.T) {
 	specimen.Run(
 		t,
-		specimen.MakeCodeboxSet(map[string]specimen.BoxFunction{
-			"nullValue": func(s *specimen.S, input specimen.Dict) {
-				_ = input["nullValue"]
-			},
-		}),
+		nullValue,
 		[]specimen.File{
 			specimen.ReadLocalFile("nullValue_data.yaml"),
 		},

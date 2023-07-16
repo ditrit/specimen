@@ -49,7 +49,8 @@ func (c *Config) GetInt(node *yaml.Node) int {
 	return int(result)
 }
 
-// MapAssertStringKeysAmong asserts the keys of the mapping node are all strings whose value is among the given slice of accepted values
+// MapAssertStringKeysAmong asserts the keys of the mapping node are all
+// strings whose value is among the given slice of accepted values
 func (c *Config) MapAssertStringKeysAmong(node *yaml.Node, acceptSlice []string) {
 	c.Resolve(&node)
 checking:
@@ -69,7 +70,8 @@ checking:
 	}
 }
 
-// Search through a yaml map for the entry associated to a given key and retrieve any kind of value, as interface{}
+// Search through a yaml map for the entry associated to a given key and
+// retrieve any kind of value, as interface{}
 func (c *Config) MapGetAny(node *yaml.Node, key string) interface{} {
 	return c.ExtractContent(c.MapGetValue(node, key))
 }
