@@ -26,11 +26,13 @@ cd it
 touch it.go it_test.go it_testdata.yaml
 ```
 
-- `it.go` see [Example package code](#example-package-code)
-- `it_test.go` see [Code box](#code-box)
-- `it_testdata.yml` see [Yaml Data](#yaml-data)
+Fill each of the three files with the code found in this README:
 
-Finally:
+- For `it.go` see [Example package code](#example-package-code)
+- For `it_test.go` see [Code box](#code-box)
+- For `it_testdata.yml` see [Yaml Data](#yaml-data)
+
+Finally, run:
 
 ```sh
 go mod init it
@@ -80,8 +82,6 @@ A test box is an **adapter** between the parsed data and the library code being 
 
 ```go
 package it_test
-
-package zoo_test
 
 import (
 	"strconv"
@@ -135,7 +135,7 @@ func AddAnimal(animal string) string {
 
 ```sh
 # golang
-go test ./test/counter ./test/danger ./test/novel ./test/zoo
+go test ./test/counter ./test/danger ./test/novel ./test/nullValue ./test/zoo
 # or
 go test test/counter/counter_test.go
 go test test/danger/danger_test.go
@@ -203,8 +203,7 @@ nodule:
   # all the entries of the mapping will be added to the descendant slabs of
   # this nodule and then passed to the code box, except for the `content` entry
   _mapOf: { string: tip }
-# Besides all the keys that are found in the yaml, the code box will be passed
-# an argument "title": an array of strings, the titles the library encountered
-# on its way to the tree leaf. The code box will also be passed an argument
-# "filename" which contains the name of the file, as specified to the library.
+# Besides all the keys that are found in the yaml, the test box will be passed
+# an argument "filepath" which contains the path to the yaml file, as specified
+# to Lidy.
 ```

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ditrit/specimen/go/focustree"
+	"github.com/ditrit/specimen/go/orderedstringmap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -55,6 +56,5 @@ type Nodule struct {
 	Flag          focustree.FlagType
 	HasContentKey bool
 	Children      []Nodule
-	DataMatrix    map[string][]string
-	DataOrder     []string
+	DataMatrix    orderedstringmap.OSM
 }
