@@ -43,7 +43,7 @@ type File struct {
 // Dict is a shorthand for map of string to string
 type Dict = map[string]string
 
-// BoxFunction is the type that user-defined functions must implement in codeboxes
+// BoxFunction is the type that user-defined functions must implement in the testbox
 type BoxFunction func(s *S, tile Dict)
 
 // NoduleRoot is used to gather the files for exploration by the focustree package

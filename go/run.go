@@ -55,9 +55,9 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 	// Run all the selected slab
 	for _, leaf := range selectedLeaves {
 		slab := leaf.(Nodule)
-		// Pass the slab data to the codebox
+		// Pass the slab data to the testbox
 		// - Manage the context (s, test start and test end)
-		// - Recover from any panic that might arise during the codebox call
+		// - Recover from any panic that might arise during the testbox call
 		// - Check the output if an expected output is provided
 		// Nodule Start
 		s.status = Pristine
@@ -127,7 +127,7 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 
 func (nodule Nodule) runBoxFunction(s *S, tile Dict, box BoxFunction) {
 	defer func() {
-		// report that the codebox has panicked
+		// report that the testbox has panicked
 		if data := recover(); data != nil {
 			if s.status == Aborted {
 				return

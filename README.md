@@ -12,13 +12,13 @@ It supports using the `FOCUS` and `PENDING` flags in the data tree to run only p
 
 ![overview of the way the specimen library works](doc/specimen-overview.svg)
 
-- A **Test Box** is a user-defined function passed to `specimen.run`. It serves as an adaptator between Specimen and the user code being tested. Indeed, it prepares the data for testing, runs the code being tested and performs the checks on the code result once it has finished.
+- A **Test Box** is a user-defined function passed to `specimen.run`. It serves as an adaptator between Specimen and the user code being tested. As such, it prepares the data for testing, runs the code being tested and performs the checks on the code result once it has finished.
 - A **Slab** is a leaf of the yaml files data tree that Specimen processes.
 - A **Tile** is a chunk of data to be loaded into a test box. When test matrices are used, a slab will produce multiple tiles.
 
-## Getting started with the Golang implementation
+## Getting started with Specimen in Golang
 
-To get started, create a directory `it/` and the three files `it.go` `it_test.go` and `it_testdata.yaml`. For each file, copy the content of linked section. Finally, run `go test` in the `it/` directory.
+To get started, create a directory `it/` and the three files `it.go` `it_test.go` and `it_testdata.yaml`. For each file, copy the content of linked section. Install the dependencies and finally run `go test` in the `it/` directory:
 
 ```sh
 mkdir it
@@ -29,7 +29,7 @@ touch it.go it_test.go it_testdata.yaml
 Fill each of the three files with the code found in this README:
 
 - For `it.go` see [Example package code](#example-package-code)
-- For `it_test.go` see [Code box](#code-box)
+- For `it_test.go` see [Code box](#test-box)
 - For `it_testdata.yml` see [Yaml Data](#yaml-data)
 
 Finally, run:
@@ -63,8 +63,8 @@ content:
       - name: horse
         animal: horse
         expected_result: horse
-      - name: parasprite # this slab should be ignored
-        flag: PENDING
+      - flag: PENDING
+        name: parasprite # this slab will be ignored
         animal: parasprite
   - name: zebra
     animal: zebra
@@ -78,13 +78,12 @@ content:
 
 ## Test box
 
-A test box is an **adapter** between the parsed data and the library code being tested. It takes as input the testing context `s` and the **input map**. A code box looks like this:
+A test box is an **adapter** between the parsed data and the library code being tested. It takes as input the testing context `s` and the **input map**. A test box looks like this:
 
 ```go
 package it_test
 
 import (
-	"strconv"
 	"testing"
 
 	specimen "github.com/ditrit/specimen/go"
@@ -131,7 +130,7 @@ func AddAnimal(animal string) string {
 }
 ```
 
-## Running the examples
+## Running the tests
 
 ```sh
 # golang
@@ -143,7 +142,10 @@ go test test/novel/novel_test.go
 go test test/nullValue/nullValue_test.go
 go test test/zoo/zoo_test.go
 
-# python
+# python (v3.10 or a future version)
+cd python
+python -m poetry install
+cd ..
 python test/counter/counter_test.py
 python test/novel/novel_test.py
 python test/novel/nullValue_test.py
@@ -168,7 +170,7 @@ The content of a yaml test data file must match the `main` rule of the lidy sche
 ```yaml
 main: nodule
 
-# scalar is any yaml scalar. Please note that whatever the type it, it will
+# scalar is any yaml scalar. Please note that whatever the type is, it will
 # appear as a string in the tile Dict.
 scalar:
   _oneOf:
@@ -188,17 +190,18 @@ tip:
 
 nodule:
   _mapFacultative:
-    # content contains all the children of the current nodule. Nodes which
+    # `content` contains all the children of the current nodule. Nodes which
     # contain a content entry are seen as tree nodes, while nodes which do
     # not contain it are seen as leaves
     content:
       - _listOf: nodule
+    # The flag can be either "PENDING", "FOCUS" or .not specified.
     # The PENDING flag tells the engine to skip the node and all its decendants.
-    # The FOCUS flag tells the engine to skip all the OTHER nodes that do not
-    # have the flag "FOCUS"
+    # The FOCUS flag tells the engine to skip all the OTHER nodes; the one which
+    # do not have the flag "FOCUS".
     flag:
       _in: ["PENDING", "FOCUS"]
-    # abount can contain any data: it will not be checked by the parser, and it
+    # `about` can contain any data: it will not be checked by the parser, and it
     # will not appear in the data passed to the box function
     about: any
   # all the entries of the mapping will be added to the descendant slabs of
