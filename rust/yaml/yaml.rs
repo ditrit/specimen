@@ -1,3 +1,5 @@
+/// Note:
+/// This file was originally copy-pasted from yaml-rust
 use linked_hash_map::LinkedHashMap;
 use std::collections::BTreeMap;
 use std::f64;
