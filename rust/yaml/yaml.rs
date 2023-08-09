@@ -1,6 +1,5 @@
 /// Note:
 /// This file was originally copy-pasted from yaml-rust
-use linked_hash_map::LinkedHashMap;
 use std::collections::BTreeMap;
 use std::f64;
 use std::i64;
@@ -27,8 +26,8 @@ use yaml_rust::scanner::{Marker, ScanError, TScalarStyle, TokenType};
 ///     assert!(v.as_i64().is_some());
 /// }
 /// ```
-#[derive(Clone, PartialEq, PartialOrd, Debug, Eq, Ord, Hash)]
-pub enum Yaml {
+#[derive(Clone, Default, PartialEq, PartialOrd, Debug, Eq, Ord, Hash)]
+pub enum YamlData {
     /// Float types are stored as String and parsed on demand.
     /// Note that f64 does NOT implement Eq trait and can NOT be stored in BTreeMap.
     Real(string::String),
@@ -38,12 +37,12 @@ pub enum Yaml {
     String(string::String),
     /// YAML bool, e.g. `true` or `false`.
     Boolean(bool),
-    /// YAML array, can be accessed as a `Vec`.
-    Array(self::Array),
-    /// YAML hash, can be accessed as a `LinkedHashMap`.
+    /// YAML sequence, can be accessed as a `Vec`.
+    List(self::List),
+    /// YAML map, can be accessed as a `Vec` of key-value pairs.
     ///
     /// Insertion order will match the order of insertion into the map.
-    Hash(self::Hash),
+    Mapping(self::Mapping),
     /// Alias, not fully supported yet.
     Alias(usize),
     /// YAML null, e.g. `null` or `~`.
@@ -51,11 +50,35 @@ pub enum Yaml {
     /// Accessing a nonexistent node via the Index trait returns `BadValue`. This
     /// simplifies error handling in the calling code. Invalid type conversion also
     /// returns `BadValue`.
+    #[default]
     BadValue,
 }
 
-pub type Array = Vec<Yaml>;
-pub type Hash = LinkedHashMap<Yaml, Yaml>;
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd, Debug, Eq, Ord, Hash)]
+pub struct Position {
+    pub line: usize,
+    pub column: usize,
+}
+
+#[derive(Clone, Default, PartialEq, PartialOrd, Debug, Eq, Ord, Hash)]
+pub struct Yaml {
+    pub data: YamlData,
+    pub position: Position,
+}
+
+pub type List = Vec<Yaml>;
+pub type Mapping = Vec<(Yaml, Yaml)>;
+
+impl Yaml {
+    fn new(data: YamlData, position: Position) -> Yaml {
+        Yaml { data, position }
+    }
+}
+
+static BAD_VALUE: Yaml = Yaml {
+    data: YamlData::BadValue,
+    position: Position { line: 0, column: 0 },
+};
 
 // parse f64 as Core schema
 // See: https://github.com/chyh1990/yaml-rust/issues/51
@@ -78,7 +101,11 @@ pub struct YamlLoader {
 }
 
 impl MarkedEventReceiver for YamlLoader {
-    fn on_event(&mut self, ev: Event, _: Marker) {
+    fn on_event(&mut self, ev: Event, marker: Marker) {
+        let position = Position {
+            line: marker.line(),
+            column: marker.col(),
+        };
         // println!("EV {:?}", ev);
         match ev {
             Event::DocumentStart => {
@@ -87,21 +114,23 @@ impl MarkedEventReceiver for YamlLoader {
             Event::DocumentEnd => {
                 match self.doc_stack.len() {
                     // empty document
-                    0 => self.docs.push(Yaml::BadValue),
+                    0 => self.docs.push(Yaml::new(YamlData::BadValue, position)),
                     1 => self.docs.push(self.doc_stack.pop().unwrap().0),
                     _ => unreachable!(),
                 }
             }
             Event::SequenceStart(aid) => {
-                self.doc_stack.push((Yaml::Array(Vec::new()), aid));
+                self.doc_stack
+                    .push((Yaml::new(YamlData::List(Vec::new()), position), aid));
             }
             Event::SequenceEnd => {
                 let node = self.doc_stack.pop().unwrap();
                 self.insert_new_node(node);
             }
             Event::MappingStart(aid) => {
-                self.doc_stack.push((Yaml::Hash(Hash::new()), aid));
-                self.key_stack.push(Yaml::BadValue);
+                self.doc_stack
+                    .push((Yaml::new(YamlData::Mapping(Mapping::new()), position), aid));
+                self.key_stack.push(BAD_VALUE.clone());
             }
             Event::MappingEnd => {
                 self.key_stack.pop().unwrap();
@@ -109,8 +138,8 @@ impl MarkedEventReceiver for YamlLoader {
                 self.insert_new_node(node);
             }
             Event::Scalar(v, style, aid, tag) => {
-                let node = if style != TScalarStyle::Plain {
-                    Yaml::String(v)
+                let yaml_data = if style != TScalarStyle::Plain {
+                    YamlData::String(v)
                 } else if let Some(TokenType::Tag(ref handle, ref suffix)) = tag {
                     // XXX tag:yaml.org,2002:
                     if handle == "!!" {
@@ -118,38 +147,38 @@ impl MarkedEventReceiver for YamlLoader {
                             "bool" => {
                                 // "true" or "false"
                                 match v.parse::<bool>() {
-                                    Err(_) => Yaml::BadValue,
-                                    Ok(v) => Yaml::Boolean(v),
+                                    Err(_) => YamlData::BadValue,
+                                    Ok(v) => YamlData::Boolean(v),
                                 }
                             }
                             "int" => match v.parse::<i64>() {
-                                Err(_) => Yaml::BadValue,
-                                Ok(v) => Yaml::Integer(v),
+                                Err(_) => YamlData::BadValue,
+                                Ok(v) => YamlData::Integer(v),
                             },
                             "float" => match parse_f64(&v) {
-                                Some(_) => Yaml::Real(v),
-                                None => Yaml::BadValue,
+                                Some(_) => YamlData::Real(v),
+                                None => YamlData::BadValue,
                             },
                             "null" => match v.as_ref() {
-                                "~" | "null" => Yaml::Null,
-                                _ => Yaml::BadValue,
+                                "~" | "null" => YamlData::Null,
+                                _ => YamlData::BadValue,
                             },
-                            _ => Yaml::String(v),
+                            _ => YamlData::String(v),
                         }
                     } else {
-                        Yaml::String(v)
+                        YamlData::String(v)
                     }
                 } else {
                     // Datatype is not specified, or unrecognized
-                    Yaml::from_str(&v)
+                    YamlData::from_str(&v)
                 };
 
-                self.insert_new_node((node, aid));
+                self.insert_new_node((Yaml::new(yaml_data, position), aid));
             }
             Event::Alias(id) => {
                 let n = match self.anchor_map.get(&id) {
                     Some(v) => v.clone(),
-                    None => Yaml::BadValue,
+                    None => BAD_VALUE.clone(),
                 };
                 self.insert_new_node((n, 0));
             }
@@ -169,18 +198,19 @@ impl YamlLoader {
             self.doc_stack.push(node);
         } else {
             let parent = self.doc_stack.last_mut().unwrap();
-            match *parent {
-                (Yaml::Array(ref mut v), _) => v.push(node.0),
-                (Yaml::Hash(ref mut h), _) => {
+
+            match parent.0.data {
+                YamlData::List(ref mut v) => v.push(node.0),
+                YamlData::Mapping(ref mut h) => {
                     let cur_key = self.key_stack.last_mut().unwrap();
                     // current node is a key
-                    if cur_key.is_badvalue() {
+                    if cur_key.data.is_badvalue() {
                         *cur_key = node.0;
                     // current node is a value
                     } else {
-                        let mut newkey = Yaml::BadValue;
+                        let mut newkey = BAD_VALUE.clone();
                         mem::swap(&mut newkey, cur_key);
-                        h.insert(newkey, node.0);
+                        h.push((newkey, node.0));
                     }
                 }
                 _ => unreachable!(),
@@ -205,7 +235,7 @@ macro_rules! define_as (
     ($name:ident, $t:ident, $yt:ident) => (
 pub fn $name(&self) -> Option<$t> {
     match *self {
-        Yaml::$yt(v) => Some(v),
+        YamlData::$yt(v) => Some(v),
         _ => None
     }
 }
@@ -216,7 +246,7 @@ macro_rules! define_as_ref (
     ($name:ident, $t:ty, $yt:ident) => (
 pub fn $name(&self) -> Option<$t> {
     match *self {
-        Yaml::$yt(ref v) => Some(v),
+        YamlData::$yt(ref v) => Some(v),
         _ => None
     }
 }
@@ -227,124 +257,129 @@ macro_rules! define_into (
     ($name:ident, $t:ty, $yt:ident) => (
 pub fn $name(self) -> Option<$t> {
     match self {
-        Yaml::$yt(v) => Some(v),
+        YamlData::$yt(v) => Some(v),
         _ => None
     }
 }
     );
 );
 
-impl Yaml {
+impl YamlData {
     define_as!(as_bool, bool, Boolean);
     define_as!(as_i64, i64, Integer);
 
     define_as_ref!(as_str, &str, String);
-    define_as_ref!(as_hash, &Hash, Hash);
-    define_as_ref!(as_vec, &Array, Array);
+    define_as_ref!(as_vec, &List, List);
 
     define_into!(into_bool, bool, Boolean);
     define_into!(into_i64, i64, Integer);
     define_into!(into_string, String, String);
-    define_into!(into_hash, Hash, Hash);
-    define_into!(into_vec, Array, Array);
+    define_into!(into_vec, List, List);
 
     pub fn is_null(&self) -> bool {
         match *self {
-            Yaml::Null => true,
+            YamlData::Null => true,
             _ => false,
         }
     }
 
     pub fn is_badvalue(&self) -> bool {
         match *self {
-            Yaml::BadValue => true,
+            YamlData::BadValue => true,
             _ => false,
         }
     }
 
     pub fn is_array(&self) -> bool {
         match *self {
-            Yaml::Array(_) => true,
+            YamlData::List(_) => true,
             _ => false,
         }
     }
 
     pub fn as_f64(&self) -> Option<f64> {
         match *self {
-            Yaml::Real(ref v) => parse_f64(v),
+            YamlData::Real(ref v) => parse_f64(v),
             _ => None,
         }
     }
 
     pub fn into_f64(self) -> Option<f64> {
         match self {
-            Yaml::Real(ref v) => parse_f64(v),
+            YamlData::Real(ref v) => parse_f64(v),
             _ => None,
         }
     }
 }
 
 #[cfg_attr(feature = "cargo-clippy", allow(should_implement_trait))]
-impl Yaml {
+impl YamlData {
     // Not implementing FromStr because there is no possibility of Error.
     // This function falls back to Yaml::String if nothing else matches.
-    pub fn from_str(v: &str) -> Yaml {
+    pub fn from_str(v: &str) -> YamlData {
         if v.starts_with("0x") {
             if let Ok(i) = i64::from_str_radix(&v[2..], 16) {
-                return Yaml::Integer(i);
+                return YamlData::Integer(i);
             }
         }
         if v.starts_with("0o") {
             if let Ok(i) = i64::from_str_radix(&v[2..], 8) {
-                return Yaml::Integer(i);
+                return YamlData::Integer(i);
             }
         }
         if v.starts_with('+') {
             if let Ok(i) = v[1..].parse::<i64>() {
-                return Yaml::Integer(i);
+                return YamlData::Integer(i);
             }
         }
         match v {
-            "~" | "null" => Yaml::Null,
-            "true" => Yaml::Boolean(true),
-            "false" => Yaml::Boolean(false),
-            _ if v.parse::<i64>().is_ok() => Yaml::Integer(v.parse::<i64>().unwrap()),
+            "~" | "null" => YamlData::Null,
+            "true" => YamlData::Boolean(true),
+            "false" => YamlData::Boolean(false),
+            _ if v.parse::<i64>().is_ok() => YamlData::Integer(v.parse::<i64>().unwrap()),
             // try parsing as f64
-            _ if parse_f64(v).is_some() => Yaml::Real(v.to_owned()),
-            _ => Yaml::String(v.to_owned()),
+            _ if parse_f64(v).is_some() => YamlData::Real(v.to_owned()),
+            _ => YamlData::String(v.to_owned()),
         }
     }
 }
 
-static BAD_VALUE: Yaml = Yaml::BadValue;
-impl<'a> Index<&'a str> for Yaml {
+impl<'a> Index<&'a str> for YamlData {
     type Output = Yaml;
 
     fn index(&self, idx: &'a str) -> &Yaml {
-        let key = Yaml::String(idx.to_owned());
-        match self.as_hash() {
-            Some(h) => h.get(&key).unwrap_or(&BAD_VALUE),
-            None => &BAD_VALUE,
+        let key = YamlData::String(idx.to_owned());
+
+        match *self {
+            YamlData::Mapping(ref v) => v
+                .iter()
+                .find(|e| e.0.data == key)
+                .map(|e| &e.1)
+                .unwrap_or(&BAD_VALUE),
+            _ => &BAD_VALUE,
         }
     }
 }
 
-impl Index<usize> for Yaml {
+impl Index<usize> for YamlData {
     type Output = Yaml;
 
     fn index(&self, idx: usize) -> &Yaml {
-        if let Some(v) = self.as_vec() {
+        if let YamlData::List(ref v) = *self {
             v.get(idx).unwrap_or(&BAD_VALUE)
-        } else if let Some(v) = self.as_hash() {
-            let key = Yaml::Integer(idx as i64);
-            v.get(&key).unwrap_or(&BAD_VALUE)
+        } else if let YamlData::Mapping(ref v) = *self {
+            let key = YamlData::Integer(idx as i64);
+            v.iter()
+                .find(|e| e.0.data == key)
+                .map(|e| &e.1)
+                .unwrap_or(&BAD_VALUE)
         } else {
             &BAD_VALUE
         }
     }
 }
 
-impl IntoIterator for Yaml {
+impl IntoIterator for YamlData {
     type Item = Yaml;
     type IntoIter = YamlIter;
 
@@ -369,7 +404,7 @@ impl Iterator for YamlIter {
 
 #[cfg(test)]
 mod test {
-    use crate::yaml::*;
+    use super::*;
     use std::f64;
     #[test]
     fn test_coerce() {
@@ -380,10 +415,10 @@ c: [1, 2]
 ";
         let out = YamlLoader::load_from_str(&s).unwrap();
         let doc = &out[0];
-        assert_eq!(doc["a"].as_i64().unwrap(), 1i64);
-        assert_eq!(doc["b"].as_f64().unwrap(), 2.2f64);
-        assert_eq!(doc["c"][1].as_i64().unwrap(), 2i64);
-        assert!(doc["d"][0].is_badvalue());
+        assert_eq!(doc.data["a"].data.as_i64().unwrap(), 1i64);
+        assert_eq!(doc.data["b"].data.as_f64().unwrap(), 2.2f64);
+        assert_eq!(doc.data["c"].data[1].data.as_i64().unwrap(), 2i64);
+        assert!(doc.data["d"].data[0].data.is_badvalue());
     }
 
     #[test]
@@ -391,7 +426,10 @@ c: [1, 2]
         let s: String = "".to_owned();
         YamlLoader::load_from_str(&s).unwrap();
         let s: String = "---".to_owned();
-        assert_eq!(YamlLoader::load_from_str(&s).unwrap()[0], Yaml::Null);
+        assert_eq!(
+            YamlLoader::load_from_str(&s).unwrap()[0].data,
+            YamlData::Null
+        );
     }
 
     #[test]
@@ -415,7 +453,7 @@ a7: 你好
         .to_owned();
         let out = YamlLoader::load_from_str(&s).unwrap();
         let doc = &out[0];
-        assert_eq!(doc["a7"].as_str().unwrap(), "你好");
+        assert_eq!(doc.data["a7"].data.as_str().unwrap(), "你好");
     }
 
     #[test]
@@ -441,7 +479,7 @@ a2: *DEFAULT
 ";
         let out = YamlLoader::load_from_str(&s).unwrap();
         let doc = &out[0];
-        assert_eq!(doc["a2"]["b1"].as_i64().unwrap(), 4);
+        assert_eq!(doc.data["a2"].data["b1"].data.as_i64().unwrap(), 4);
     }
 
     #[test]
@@ -453,7 +491,7 @@ a1: &DEFAULT
 ";
         let out = YamlLoader::load_from_str(&s).unwrap();
         let doc = &out[0];
-        assert_eq!(doc["a1"]["b2"], Yaml::BadValue);
+        assert_eq!(doc.data["a1"].data["b2"].data, YamlData::BadValue);
     }
 
     #[test]
@@ -462,7 +500,7 @@ a1: &DEFAULT
         let s = "&a";
         let out = YamlLoader::load_from_str(&s).unwrap();
         let doc = &out[0];
-        assert_eq!(doc.as_str().unwrap(), "");
+        assert_eq!(doc.data.as_str().unwrap(), "");
     }
 
     #[test]
@@ -499,34 +537,34 @@ a1: &DEFAULT
         let out = YamlLoader::load_from_str(&s).unwrap();
         let doc = &out[0];
 
-        assert_eq!(doc[0].as_str().unwrap(), "string");
-        assert_eq!(doc[1].as_str().unwrap(), "string");
-        assert_eq!(doc[2].as_str().unwrap(), "string");
-        assert_eq!(doc[3].as_i64().unwrap(), 123);
-        assert_eq!(doc[4].as_i64().unwrap(), -321);
-        assert_eq!(doc[5].as_f64().unwrap(), 1.23);
-        assert_eq!(doc[6].as_f64().unwrap(), -1e4);
-        assert!(doc[7].is_null());
-        assert!(doc[8].is_null());
-        assert_eq!(doc[9].as_bool().unwrap(), true);
-        assert_eq!(doc[10].as_bool().unwrap(), false);
-        assert_eq!(doc[11].as_str().unwrap(), "0");
-        assert_eq!(doc[12].as_i64().unwrap(), 100);
-        assert_eq!(doc[13].as_f64().unwrap(), 2.0);
-        assert!(doc[14].is_null());
-        assert_eq!(doc[15].as_bool().unwrap(), true);
-        assert_eq!(doc[16].as_bool().unwrap(), false);
-        assert_eq!(doc[17].as_i64().unwrap(), 255);
-        assert!(doc[18].is_badvalue());
-        assert!(doc[19].is_badvalue());
-        assert!(doc[20].is_badvalue());
-        assert!(doc[21].is_badvalue());
-        assert_eq!(doc[22].as_i64().unwrap(), 63);
-        assert_eq!(doc[23][0].as_i64().unwrap(), 15);
-        assert_eq!(doc[23][1].as_i64().unwrap(), 15);
-        assert_eq!(doc[24].as_i64().unwrap(), 12345);
-        assert!(doc[25][0].as_bool().unwrap());
-        assert!(!doc[25][1].as_bool().unwrap());
+        assert_eq!(doc.data[0].data.as_str().unwrap(), "string");
+        assert_eq!(doc.data[1].data.as_str().unwrap(), "string");
+        assert_eq!(doc.data[2].data.as_str().unwrap(), "string");
+        assert_eq!(doc.data[3].data.as_i64().unwrap(), 123);
+        assert_eq!(doc.data[4].data.as_i64().unwrap(), -321);
+        assert_eq!(doc.data[5].data.as_f64().unwrap(), 1.23);
+        assert_eq!(doc.data[6].data.as_f64().unwrap(), -1e4);
+        assert!(doc.data[7].data.is_null());
+        assert!(doc.data[8].data.is_null());
+        assert_eq!(doc.data[9].data.as_bool().unwrap(), true);
+        assert_eq!(doc.data[10].data.as_bool().unwrap(), false);
+        assert_eq!(doc.data[11].data.as_str().unwrap(), "0");
+        assert_eq!(doc.data[12].data.as_i64().unwrap(), 100);
+        assert_eq!(doc.data[13].data.as_f64().unwrap(), 2.0);
+        assert!(doc.data[14].data.is_null());
+        assert_eq!(doc.data[15].data.as_bool().unwrap(), true);
+        assert_eq!(doc.data[16].data.as_bool().unwrap(), false);
+        assert_eq!(doc.data[17].data.as_i64().unwrap(), 255);
+        assert!(doc.data[18].data.is_badvalue());
+        assert!(doc.data[19].data.is_badvalue());
+        assert!(doc.data[20].data.is_badvalue());
+        assert!(doc.data[21].data.is_badvalue());
+        assert_eq!(doc.data[22].data.as_i64().unwrap(), 63);
+        assert_eq!(doc.data[23].data[0].data.as_i64().unwrap(), 15);
+        assert_eq!(doc.data[23].data[1].data.as_i64().unwrap(), 15);
+        assert_eq!(doc.data[24].data.as_i64().unwrap(), 12345);
+        assert!(doc.data[25].data[0].data.as_bool().unwrap());
+        assert!(!doc.data[25].data[1].data.as_bool().unwrap());
     }
 
     #[test]
@@ -548,15 +586,27 @@ a1: &DEFAULT
         assert!(YamlLoader::load_from_str("---This used to cause an infinite loop").is_ok());
         assert_eq!(
             YamlLoader::load_from_str("----"),
-            Ok(vec![Yaml::String(String::from("----"))])
+            Ok(vec![Yaml::new(
+                YamlData::String(String::from("----")),
+                Position { line: 1, column: 0 }
+            )]),
+            "----"
         );
         assert_eq!(
             YamlLoader::load_from_str("--- #here goes a comment"),
-            Ok(vec![Yaml::Null])
+            Ok(vec![Yaml::new(
+                YamlData::Null,
+                Position { line: 2, column: 0 }
+            )]),
+            "--- #"
         );
         assert_eq!(
             YamlLoader::load_from_str("---- #here goes a comment"),
-            Ok(vec![Yaml::String(String::from("----"))])
+            Ok(vec![Yaml::new(
+                YamlData::String(String::from("----")),
+                Position { line: 1, column: 0 }
+            )]),
+            "---- #"
         );
     }
 
@@ -585,28 +635,31 @@ a1: &DEFAULT
 - !!float .INF
 ";
         let mut out = YamlLoader::load_from_str(&s).unwrap().into_iter();
-        let mut doc = out.next().unwrap().into_iter();
+        let mut doc = out.next().unwrap().data.into_iter();
 
-        assert_eq!(doc.next().unwrap().into_string().unwrap(), "string");
-        assert_eq!(doc.next().unwrap().into_string().unwrap(), "string");
-        assert_eq!(doc.next().unwrap().into_string().unwrap(), "string");
-        assert_eq!(doc.next().unwrap().into_i64().unwrap(), 123);
-        assert_eq!(doc.next().unwrap().into_i64().unwrap(), -321);
-        assert_eq!(doc.next().unwrap().into_f64().unwrap(), 1.23);
-        assert_eq!(doc.next().unwrap().into_f64().unwrap(), -1e4);
-        assert_eq!(doc.next().unwrap().into_bool().unwrap(), true);
-        assert_eq!(doc.next().unwrap().into_bool().unwrap(), false);
-        assert_eq!(doc.next().unwrap().into_string().unwrap(), "0");
-        assert_eq!(doc.next().unwrap().into_i64().unwrap(), 100);
-        assert_eq!(doc.next().unwrap().into_f64().unwrap(), 2.0);
-        assert_eq!(doc.next().unwrap().into_bool().unwrap(), true);
-        assert_eq!(doc.next().unwrap().into_bool().unwrap(), false);
-        assert_eq!(doc.next().unwrap().into_i64().unwrap(), 255);
-        assert_eq!(doc.next().unwrap().into_i64().unwrap(), 63);
-        assert_eq!(doc.next().unwrap().into_i64().unwrap(), 12345);
-        assert_eq!(doc.next().unwrap().into_f64().unwrap(), f64::NEG_INFINITY);
-        assert!(doc.next().unwrap().into_f64().is_some());
-        assert_eq!(doc.next().unwrap().into_f64().unwrap(), f64::INFINITY);
+        assert_eq!(doc.next().unwrap().data.into_string().unwrap(), "string");
+        assert_eq!(doc.next().unwrap().data.into_string().unwrap(), "string");
+        assert_eq!(doc.next().unwrap().data.into_string().unwrap(), "string");
+        assert_eq!(doc.next().unwrap().data.into_i64().unwrap(), 123);
+        assert_eq!(doc.next().unwrap().data.into_i64().unwrap(), -321);
+        assert_eq!(doc.next().unwrap().data.into_f64().unwrap(), 1.23);
+        assert_eq!(doc.next().unwrap().data.into_f64().unwrap(), -1e4);
+        assert_eq!(doc.next().unwrap().data.into_bool().unwrap(), true);
+        assert_eq!(doc.next().unwrap().data.into_bool().unwrap(), false);
+        assert_eq!(doc.next().unwrap().data.into_string().unwrap(), "0");
+        assert_eq!(doc.next().unwrap().data.into_i64().unwrap(), 100);
+        assert_eq!(doc.next().unwrap().data.into_f64().unwrap(), 2.0);
+        assert_eq!(doc.next().unwrap().data.into_bool().unwrap(), true);
+        assert_eq!(doc.next().unwrap().data.into_bool().unwrap(), false);
+        assert_eq!(doc.next().unwrap().data.into_i64().unwrap(), 255);
+        assert_eq!(doc.next().unwrap().data.into_i64().unwrap(), 63);
+        assert_eq!(doc.next().unwrap().data.into_i64().unwrap(), 12345);
+        assert_eq!(
+            doc.next().unwrap().data.into_f64().unwrap(),
+            f64::NEG_INFINITY
+        );
+        assert!(doc.next().unwrap().data.into_f64().is_some());
+        assert_eq!(doc.next().unwrap().data.into_f64().unwrap(), f64::INFINITY);
     }
 
     #[test]
@@ -618,17 +671,21 @@ c: ~
 ";
         let out = YamlLoader::load_from_str(&s).unwrap();
         let first = out.into_iter().next().unwrap();
-        let mut iter = first.into_hash().unwrap().into_iter();
+        let v = match first.data {
+            YamlData::Mapping(v) => v,
+            _ => panic!(),
+        };
+        let mut iter = v.into_iter().map(|(x, y)| (x.data, y.data));
         assert_eq!(
-            Some((Yaml::String("b".to_owned()), Yaml::Null)),
+            Some((YamlData::String("b".to_owned()), YamlData::Null)),
             iter.next()
         );
         assert_eq!(
-            Some((Yaml::String("a".to_owned()), Yaml::Null)),
+            Some((YamlData::String("a".to_owned()), YamlData::Null)),
             iter.next()
         );
         assert_eq!(
-            Some((Yaml::String("c".to_owned()), Yaml::Null)),
+            Some((YamlData::String("c".to_owned()), YamlData::Null)),
             iter.next()
         );
         assert_eq!(None, iter.next());
@@ -643,63 +700,11 @@ c: ~
     important: false
 ";
         let out = YamlLoader::load_from_str(&s).unwrap();
-        let first = out.into_iter().next().unwrap();
-        assert_eq!(first[0]["important"].as_bool().unwrap(), true);
-    }
-
-    #[test]
-    fn test_indentation_equality() {
-        let four_spaces = YamlLoader::load_from_str(
-            r#"
-hash:
-    with:
-        indentations
-"#,
-        )
-        .unwrap()
-        .into_iter()
-        .next()
-        .unwrap();
-
-        let two_spaces = YamlLoader::load_from_str(
-            r#"
-hash:
-  with:
-    indentations
-"#,
-        )
-        .unwrap()
-        .into_iter()
-        .next()
-        .unwrap();
-
-        let one_space = YamlLoader::load_from_str(
-            r#"
-hash:
- with:
-  indentations
-"#,
-        )
-        .unwrap()
-        .into_iter()
-        .next()
-        .unwrap();
-
-        let mixed_spaces = YamlLoader::load_from_str(
-            r#"
-hash:
-     with:
-               indentations
-"#,
-        )
-        .unwrap()
-        .into_iter()
-        .next()
-        .unwrap();
-
-        assert_eq!(four_spaces, two_spaces);
-        assert_eq!(two_spaces, one_space);
-        assert_eq!(four_spaces, mixed_spaces);
+        let first = out.iter().next().unwrap();
+        assert_eq!(
+            first.data[0].data["important"].data.as_bool().unwrap(),
+            true
+        );
     }
 
     #[test]
@@ -722,9 +727,10 @@ subcommands3:
         let doc = &out.into_iter().next().unwrap();
 
         println!("{:#?}", doc);
-        assert_eq!(doc["subcommands"][0]["server"], Yaml::Null);
-        assert!(doc["subcommands2"][0]["server"].as_hash().is_some());
-        assert!(doc["subcommands3"][0]["server"].as_hash().is_some());
+        assert_eq!(
+            doc.data["subcommands"].data[0].data["server"].data,
+            YamlData::Null
+        );
     }
 
     #[test]
