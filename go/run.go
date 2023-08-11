@@ -94,8 +94,7 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 			message := ""
 			switch s.status {
 			case Failed:
-				databoxInfo := ""
-				message = fmt.Sprintf("FAIL%s", databoxInfo)
+				message = "FAIL"
 			case Aborted:
 				message = "ABORT"
 			case Panicked:

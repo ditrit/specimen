@@ -2,45 +2,69 @@ use linked_hash_map::LinkedHashMap;
 
 use crate::file;
 use crate::flag;
+use crate::Dict;
+use std::cell::RefCell;
+use std::rc::Rc;
 use yaml;
-
-pub type Root<'a> = Vec<Nodule<'a>>;
 
 #[derive(Clone, Debug)]
 pub struct Nodule<'a> {
     pub node: &'a yaml::Yaml,
     pub flag: focustree::Flag,
-    pub has_content_key: bool,
-    pub file_path: Box<str>,
+    pub is_leaf: bool,
+    pub file_path: Rc<str>,
     pub children: Box<[Nodule<'a>]>,
-    pub data_matrix: LinkedHashMap<Box<str>, Box<[Box<str>]>>,
+    // pub data_matrix: LinkedHashMap<Box<str>, Box<[Box<str>]>>,
+    pub data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>>,
 }
 
 impl<'a> Nodule<'a> {
     // Associated functions
-    pub fn from_file(file: &'a file::File) -> Nodule<'a> {
-        let document_vec = yaml::YamlLoader::load_from_str(&file.content)
+    pub fn from_file(file: &file::File, store: &'a mut Box<Vec<yaml::Yaml>>) -> Nodule<'a> {
+        let file_path = Rc::from(file.path.to_owned());
+
+        let mut document_vec = yaml::YamlLoader::load_from_str(&file.content)
             .expect(&format!("Failed to parse YAML from file {}.", &file.path));
 
-        let node = &document_vec[0];
+        std::mem::swap(&mut document_vec, store);
 
-        match node.data {
-            yaml::YamlData::Mapping(_) => {}
-            _ => panic!("The root node of the YAML test data file must be a map."),
-        }
+        let children = store
+            .iter()
+            .map(|node| {
+                match node.data {
+                    yaml::YamlData::Mapping(_) => {}
+                    _ => panic!("The root node of the YAML test data file must be a mapping."),
+                }
 
-        let mut n = Nodule {
-            node,
+                let mut data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>> = LinkedHashMap::new();
+                data_matrix.insert(
+                    Box::from("file_path"),
+                    Rc::new([Box::from(file.path.clone())]),
+                );
+
+                let mut n = Nodule {
+                    node: &node,
+                    flag: focustree::Flag::None,
+                    is_leaf: true,
+                    file_path: Rc::clone(&file_path),
+                    children: Box::new([]),
+                    data_matrix,
+                };
+
+                n.initalize_tree();
+
+                n
+            })
+            .collect();
+
+        Nodule {
+            node: &yaml::BAD_VALUE,
             flag: focustree::Flag::None,
-            has_content_key: false,
-            file_path: file.path.clone(),
-            children: Box::new([]),
+            is_leaf: false,
+            file_path,
+            children,
             data_matrix: LinkedHashMap::new(),
-        };
-
-        n.initalize_tree();
-
-        n
+        }
     }
 
     // Methods
@@ -52,44 +76,177 @@ impl<'a> Nodule<'a> {
         .into()
     }
 
-    // The initialization creates all the nodules corresponding to the mapping nodes of the yaml tree, except for the PENDING nodes. It fills the fields `flag`, `has_content_key` and `children`. **It expects YamlNode and FilePath to be already set**, and it sets YamlNode and FilePath for its children.
+    // The initialization creates all the nodules which correspond to the mapping nodes of the yaml tree, except for the PENDING nodes. It fills the fields `flag`, `has_content_key` and `children`. **It expects YamlNode and FilePath to be already set**, and it sets YamlNode and FilePath for its children.
     fn initalize_tree(&mut self) {
-        if let yaml::YamlData::Mapping(ref map) = self.node.data {
-            for (key, value) in map {
-                if let yaml::YamlData::String(ref key_name) = key.data {
-                    if key_name == "content" {
-                        self.has_content_key = true;
-                        if let yaml::YamlData::List(ref yaml_vec) = value.data {
-                            self.children = yaml_vec
-                                .iter()
-                                .map(|node| {
-                                    let mut n = Nodule {
-                                        node,
-                                        flag: focustree::Flag::None,
-                                        has_content_key: false,
-                                        file_path: self.file_path.clone(),
-                                        children: Box::new([]),
-                                        data_matrix: LinkedHashMap::new(),
-                                    };
-                                    n.initalize_tree();
-                                    n
-                                })
-                                .collect();
-                        } else {
-                            panic!(
-                                "The value associated with the content keyword must be a sequence of mappings."
-                            )
-                        }
-                    }
-                    if key_name == "flag" {
-                        self.flag = flag::read_flag(&value);
-                    }
-                } else {
-                    panic!("using non-string keys is not supported")
-                }
-            }
-        } else {
-            panic!("the content descendant nodes must by yaml mappings")
+        match self.node.data {
+            yaml::YamlData::Mapping(_) => {}
+            _ => panic!("The content descendant nodes must by yaml mappings"),
         }
+
+        let flag_node = &self.node.data["flag"];
+        if *flag_node != yaml::BAD_VALUE {
+            self.flag = flag::read_flag(&flag_node);
+        }
+        if self.flag == focustree::Flag::Skip {
+            return;
+        }
+
+        let content_node = &self.node.data["content"];
+        if *content_node != yaml::BAD_VALUE {
+            self.is_leaf = false;
+            if let yaml::YamlData::List(ref yaml_vec) = content_node.data {
+                self.children = yaml_vec
+                    .iter()
+                    .map(|node| {
+                        let mut n = Nodule {
+                            node,
+                            flag: focustree::Flag::None,
+                            is_leaf: true,
+                            file_path: Rc::clone(&self.file_path),
+                            children: Box::new([]),
+                            data_matrix: LinkedHashMap::new(),
+                        };
+                        n.initalize_tree();
+                        n
+                    })
+                    .collect();
+            } else {
+                panic!(
+                    "The value associated with the content keyword must be a sequence of mappings."
+                )
+            }
+        }
+    }
+
+    pub fn populate(
+        &self,
+        data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if self.children.len() == 0 {
+            return Ok(());
+        }
+
+        let mut data_matrix = data_matrix.clone();
+
+        let data;
+
+        match self.node.data {
+            yaml::YamlData::Mapping(ref m) => {
+                data = m;
+            }
+            _ => panic!("The content descendant nodes must by yaml mappings"),
+        };
+
+        for (key, value) in data.iter() {
+            let key = match key.data {
+                yaml::YamlData::String(ref s) => s,
+                _ => panic!("The keys of the mapping nodes must be strings."),
+            };
+            if key == "flag" || key == "content" {
+                continue;
+            }
+
+            let value = match value.data {
+                yaml::YamlData::String(ref s) => vec![s],
+                yaml::YamlData::List(ref a) => a.iter().map(|v| match v.data {
+                    yaml::YamlData::String(ref s) => s,
+                    _ => panic!("The values of the mapping nodes must be strings or sequence of strings."),
+                }).collect(),
+                _ => panic!(
+                    "The values of the mapping nodes must be strings or sequence of strings."
+                ),
+            };
+
+            for child in self.children.iter() {
+                child.populate(data_matrix.clone())?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn into_resolved_data_matrix_iterator(self) -> DataMatrixIterator {
+        let length = self.data_matrix.len();
+
+        let mut reversed_key_array = self
+            .data_matrix
+            .keys()
+            .rev()
+            .map(|s| s.to_owned())
+            .collect::<Box<[Box<str>]>>();
+
+        let mut total_combinations = 1;
+        let mut size_array = Vec::with_capacity(length);
+        for key in reversed_key_array.iter() {
+            let size = self.data_matrix[key].len();
+            total_combinations *= size;
+            size_array.push(total_combinations);
+        }
+
+        let index_array = vec![0; length].into_boxed_slice();
+
+        let combination = RefCell::new(Dict::new());
+
+        // Initialize the combination
+        for key in reversed_key_array.iter() {
+            combination
+                .borrow_mut()
+                .insert((*key).clone(), self.data_matrix[key][0].clone());
+        }
+
+        DataMatrixIterator {
+            data_matrix: self.data_matrix,
+            reversed_key_array: reversed_key_array,
+            total_combinations,
+            size_array: size_array.into_boxed_slice(),
+            index_array,
+            combination,
+            index: 0,
+        }
+    }
+}
+
+pub struct DataMatrixIterator {
+    data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>>,
+    reversed_key_array: Box<[Box<str>]>,
+    total_combinations: usize,
+    size_array: Box<[usize]>,
+    /// The index_array tracks the progress of values through every set
+    index_array: Box<[usize]>,
+    combination: RefCell<Dict>,
+    index: usize,
+}
+
+impl Iterator for DataMatrixIterator {
+    type Item = RefCell<Dict>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index == 0 {
+            self.index += 1;
+            return Some(RefCell::clone(&self.combination));
+        } else if self.index >= self.total_combinations {
+            return None;
+        }
+
+        for (k, key) in self.reversed_key_array.iter().enumerate() {
+            if self.index % self.size_array[k] == 0 {
+                self.index_array[k] += 1;
+                self.index_array[k] %= self.size_array[k];
+            } else {
+                // bump the identified index
+                self.index_array[k] += 1;
+                self.index_array[k] %= self.size_array[k];
+
+                // update the combination entry corresponding to the identified key
+                self.combination.borrow_mut().insert(
+                    key.clone(),
+                    self.data_matrix[key][self.index_array[k]].clone(),
+                );
+                break;
+            }
+        }
+
+        self.index += 1;
+        Some(RefCell::clone(&self.combination))
     }
 }
