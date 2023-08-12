@@ -14,13 +14,12 @@ pub struct Nodule<'a> {
     pub is_leaf: bool,
     pub file_path: Rc<str>,
     pub children: Box<[Nodule<'a>]>,
-    // pub data_matrix: LinkedHashMap<Box<str>, Box<[Box<str>]>>,
     pub data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>>,
 }
 
 impl<'a> Nodule<'a> {
     // Associated functions
-    pub fn from_file(file: &file::File, store: &'a mut Box<Vec<yaml::Yaml>>) -> Nodule<'a> {
+    pub fn parse_file(file: &file::File, store: &'a mut Box<Vec<yaml::Yaml>>) -> Vec<Nodule<'a>> {
         let file_path = Rc::from(file.path.to_owned());
 
         let mut document_vec = yaml::YamlLoader::load_from_str(&file.content)
@@ -28,7 +27,7 @@ impl<'a> Nodule<'a> {
 
         std::mem::swap(&mut document_vec, store);
 
-        let children = store
+        store
             .iter()
             .map(|node| {
                 match node.data {
@@ -55,16 +54,7 @@ impl<'a> Nodule<'a> {
 
                 n
             })
-            .collect();
-
-        Nodule {
-            node: &yaml::BAD_VALUE,
-            flag: focustree::Flag::None,
-            is_leaf: false,
-            file_path,
-            children,
-            data_matrix: LinkedHashMap::new(),
-        }
+            .collect()
     }
 
     // Methods
@@ -120,46 +110,48 @@ impl<'a> Nodule<'a> {
 
     pub fn populate(
         &self,
-        data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>>,
+        mut data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         if self.children.len() == 0 {
             return Ok(());
         }
 
-        let mut data_matrix = data_matrix.clone();
-
-        let data;
-
-        match self.node.data {
-            yaml::YamlData::Mapping(ref m) => {
-                data = m;
-            }
-            _ => panic!("The content descendant nodes must by yaml mappings"),
+        let data = match self.node.data {
+            yaml::YamlData::Mapping(ref m) => m,
+            _ => self.panic("The content descendant nodes must be yaml mappings"),
         };
 
         for (key, value) in data.iter() {
             let key = match key.data {
                 yaml::YamlData::String(ref s) => s,
-                _ => panic!("The keys of the mapping nodes must be strings."),
+                _ => self.panic("The keys of the mapping nodes must be strings."),
             };
             if key == "flag" || key == "content" {
                 continue;
             }
 
-            let value = match value.data {
-                yaml::YamlData::String(ref s) => vec![s],
-                yaml::YamlData::List(ref a) => a.iter().map(|v| match v.data {
-                    yaml::YamlData::String(ref s) => s,
-                    _ => panic!("The values of the mapping nodes must be strings or sequence of strings."),
-                }).collect(),
-                _ => panic!(
-                    "The values of the mapping nodes must be strings or sequence of strings."
-                ),
+            let value_vector: Vec<Box<str>> = match value.data {
+                yaml::YamlData::String(ref s) => vec![Box::from(s.to_owned())],
+                yaml::YamlData::List(ref a) => {
+                    if a.len() == 0 {
+                        self.panic("When the values of the mapping nodes is a sequence, it must not be empty.")
+                    }
+                    a.iter().map(|v| match v.data {
+                        yaml::YamlData::String(ref s) => Box::from(s.to_owned()),
+                        _ => self.panic("When the values of the mapping nodes is a sequence, it must be a sequence of strings only."),
+                    }).collect()
+                }
+                _ => self.panic(&format!(
+                    "The values of mapping nodes must be strings or sequences. (key: {:?})",
+                    key
+                )),
             };
 
-            for child in self.children.iter() {
-                child.populate(data_matrix.clone())?;
-            }
+            data_matrix.insert(key.to_owned().into_boxed_str(), Rc::from(value_vector));
+        }
+
+        for child in self.children.iter() {
+            child.populate(data_matrix.clone())?;
         }
 
         Ok(())
@@ -168,7 +160,7 @@ impl<'a> Nodule<'a> {
     pub fn into_resolved_data_matrix_iterator(self) -> DataMatrixIterator {
         let length = self.data_matrix.len();
 
-        let mut reversed_key_array = self
+        let reversed_key_array = self
             .data_matrix
             .keys()
             .rev()
@@ -203,6 +195,13 @@ impl<'a> Nodule<'a> {
             combination,
             index: 0,
         }
+    }
+
+    fn panic(&self, message: &str) -> ! {
+        panic!(
+            "{} ({}:{} with data: {:?})",
+            message, self.file_path, self.node.position, self.node.data
+        )
     }
 }
 
