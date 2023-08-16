@@ -13,8 +13,8 @@ pub struct Nodule<'a> {
     pub flag: focustree::Flag,
     pub is_leaf: bool,
     pub file_path: Rc<str>,
-    pub children: Box<[Nodule<'a>]>,
     pub data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>>,
+    pub children: Box<[Nodule<'a>]>,
 }
 
 impl<'a> Nodule<'a> {
@@ -109,17 +109,15 @@ impl<'a> Nodule<'a> {
     }
 
     pub fn populate(
-        &self,
-        mut data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>>,
+        &mut self,
+        data_matrix: &LinkedHashMap<Box<str>, Rc<[Box<str>]>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if self.children.len() == 0 {
-            return Ok(());
-        }
-
         let data = match self.node.data {
             yaml::YamlData::Mapping(ref m) => m,
             _ => self.panic("The content descendant nodes must be yaml mappings"),
         };
+
+        self.data_matrix = data_matrix.clone();
 
         for (key, value) in data.iter() {
             let key = match key.data {
@@ -147,11 +145,12 @@ impl<'a> Nodule<'a> {
                 )),
             };
 
-            data_matrix.insert(key.to_owned().into_boxed_str(), Rc::from(value_vector));
+            self.data_matrix
+                .insert(key.to_owned().into_boxed_str(), Rc::from(value_vector));
         }
 
-        for child in self.children.iter() {
-            child.populate(data_matrix.clone())?;
+        for child in self.children.iter_mut() {
+            child.populate(&self.data_matrix)?;
         }
 
         Ok(())

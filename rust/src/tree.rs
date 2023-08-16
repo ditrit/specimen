@@ -19,7 +19,7 @@ impl<'a> focustree::Tree<Nodule<'a>> for Nodule<'a> {
     }
 
     fn get_value(&self) -> Nodule<'a> {
-        self.clone()
+        (*self).clone()
     }
 
     fn warning(&self, message: &str) {
