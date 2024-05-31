@@ -4,7 +4,7 @@ _Yaml-based data-driven testing_
 
 Specimen is a data-driven testing library as well as a yaml data format. It enforces separation between the _feature being tested_ and the _data_ used for testing.
 
-It comes with a **Golang**, a **Python** and a **JS** implementation for loading the data, checking its format, running your _test box_ and comparing the result with the expected one.
+It comes with a **Golang** implementation for loading the data, checking its format, running your _test box_ and comparing the result with the expected one.
 
 It supports using the `FOCUS` and `PENDING` flags in the data tree to run only parts of the test data.
 

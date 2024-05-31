@@ -1,8 +1,0 @@
-{
-    "arrowParens": "always",
-    "printWidth": 80,
-    "quoteProps": "consistent",
-    "semi": false,
-    "tabWidth": 4,
-    "trailingComma": "all"
-}
