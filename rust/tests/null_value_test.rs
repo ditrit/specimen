@@ -15,7 +15,7 @@ fn test_null_value() {
     specimen::run(
         Box::new(Runner::default()),
         &[specimen::file::File::read_local_file(
-            "../test/counter/counter_data.yaml",
+            "../test/nullValue/nullValue_data.yaml",
         )],
     )
 }
