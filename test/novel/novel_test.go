@@ -62,7 +62,7 @@ func TestNovel(t *testing.T) {
 		boxFunction,
 		[]specimen.File{
 			specimen.ReadLocalFile("novel_data.yaml"),
-			// specimen.ReadLocalFile("novel_data_with_alias.yaml"),
+			specimen.ReadLocalFile("novel_data_with_alias.yaml"),
 		},
 	)
 }
