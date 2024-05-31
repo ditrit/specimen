@@ -96,6 +96,8 @@ func (c *Config) ExtractContent(node *yaml.Node) interface{} {
 				return true
 			}
 			return false
+		} else if node.Tag == "!!null" {
+			return nil
 		}
 		panic(fmt.Errorf("unknown scalar tag [%s]", node.Tag))
 	case yaml.SequenceNode:
