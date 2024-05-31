@@ -40,38 +40,38 @@ go mod tidy
 go test
 ```
 
-You should get an output like this one:
+You should get an output similar to this one:
 
 ```
 TestIt:
-2 slab-s succeeded over 2. (0 failed)
+Ran 4 tiles in 0s
+SUCCESS -- 4 Passed | 0 Failed | 0 Aborted | 0 Panicked
 PASS
-ok      it
+ok      it      0.646s
 ```
+
+`/!\` If `go mod tidy` fails to find the specimen module, you may need to clean the go cache: `go clean -cache`, `go clean -modcache`.
 
 ## Yaml Data
 
 The yaml data file looks like this:
 
 ```yaml
+box: zoo
 content:
-  - box: zoo
-    content:
+  - content:
       - name: horse
         animal: horse
         expected_result: horse
       - name: parasprite # this slab should be ignored
         flag: PENDING
         animal: parasprite
-  - box: zoo
-    name: zebra
+  - name: zebra
     animal: zebra
     expected_result: horse zebra
   - name: animal matrix
-    box: zoo
     animal: [mouse, cat, dog]
   - name: matrix check
-    box: zoo
     animal: wolf
     expected_result: horse zebra mouse cat dog wolf
 ```
