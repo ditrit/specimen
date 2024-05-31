@@ -3,59 +3,41 @@
 # should not produce any error.
 flag: FOCUS
 content:
-  -
-    box: zoo
+  - box: zoo
     flag: FOCUS
     content:
-      -
-        name: horse
-        input:
-          animal: horse
-          expected_result: horse
-      -
-        name: parasprite # this slab should be ignored
+      horse:
+        animal: horse
+        expected_result: horse
+      parasprite: # this slab should be ignored
         flag: PENDING
-        input:
-          animal: parasprite
-  -
-    box: zoo
+        animal: parasprite
+  - box: zoo
     content:
-      -
-        name: manticore # this slab should be ignored as well since it is not focused
-        input:
-          animal: manticore
+      manticore: # this slab should be ignored as well since it is not focused
+        animal: manticore
         output: _never_
-      -
-        name: zebra
+      zebra:
         flag: FOCUS
-        input:
-          animal: zebra
-          expected_result: horse zebra
-  -
-    flag: FOCUS
+        animal: zebra
+        expected_result: horse zebra
+  - flag: FOCUS
     name: matrix animals
     box: zoo
-    matrix:
-      animal: [mouse, cat, dog]
+    animal: [mouse, cat, dog]
     input: {}
-  - 
-    flag: FOCUS
+  - flag: FOCUS
     name: matrix check
     box: zoo
-    input:
-      animal: wolf
-      expected_result: horse zebra mouse cat dog wolf
-  - 
-    flag: FOCUS
+    animal: wolf
+    expected_result: horse zebra mouse cat dog wolf
+  - flag: FOCUS
     name: combined input check
     box: animalkind
-    input:
-      leg: 4
-      horn: 0
+    leg: 4
+    horn: 0
     content:
-      - input:
-          tail: true
-          name: earthpony
-      - input:
-          horn: 2
-          name: deer
+      - tail: true
+        name: earthpony
+      - horn: 2
+        name: deer

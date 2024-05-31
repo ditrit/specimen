@@ -208,25 +208,48 @@ The content of a yaml test data file must match the `main` rule of the lidy sche
 ```yaml
 main: nodule
 
-# A nodule which does not contain any child nodule is considered a leaf.
-# Slabs must contain an `input` entry even if it is the empty map. They
-# must also be associated to a codebox, either locally or through some
-# ancestor
+# The PENDING flag tells the engine to skip the node and all its decendants.
+# The FOCUS flag tells the engine to skip all the OTHER nodes that do not have
+# the flag "FOCUS"
+flag:
+  _in: ["PENDING", "FOCUS"]
+
+# title is a string
+# if a title contains the exact keyword "PENDING" or "FOCUS", this keyword will
+# be copied to a `flag` field in the node corresponding to this title.
+title: string
+
+# scalar is any yaml scalar
+scalar:
+  _oneOf:
+    - string
+    - int
+    - float
+    - boolean
+    - nullType
+
+# A termination can be a scalar or a list of scalars. In the case of a list,
+# the current branch will be demultiplied in subbranches, which in effect, this
+# allows to produce test matrixes.
+termination:
+  _oneOf:
+    - scalar
+    - _listOf: scalar
+
 nodule:
   _mapFacultative:
-    # box is the name of the code box as declared in the code
-    box: string
-    # content is the children of the current nodule
-    content: {_listOf: nodule}
-    # input
-    input: {_mapOf: {string: any}}
-    # name is an indicative name of for the nodule it is mentioned in the error
-    # report if present
-    name: string
-    # if the flag contains FOCUS or PENDING the nodule and its desendents will be
-    # prioritized or skipped; any other value will be ignored
-    flag: string
-    # input contains the entries passed to the box
-    input: {_mapOf: {string: any}}
-    extra: any
+    # content contains all the children of the current nodule. These children
+    # can have a title when `content` is a map, or no title when `content` is
+    # a list.
+    content:
+      _oneOf:
+        - _listOf: nodule
+        - _mapOf: { title: nodule }
+    flag: flag
+  # all the key-values will be passed to the code box
+  _mapOf: { string: termination }
+# Besides all the keys that are found in the yaml, the code box will be passed
+# an argument "title": an array of strings, the titles the library encountered
+# on its way to the tree leaf. The code box will also be passed an argument
+# "filename" which contains the name of the file, as specified to the library.
 ```

@@ -7,25 +7,19 @@ extra:
     book: *book
     turn_page_count: 4
 content:
-  -
-    name: turn_page_output
+  - name: turn_page_output
     box: turn_page
-    input:
-      <<: *turn_page_input
-      expected_result:
-        title: aleph
-        left_page: 8
-        size: 90
-  -
-    box: turn_page_expect_page
-    input:
-      <<: *turn_page_input
-      expected_left_page: 8
-  -
-    box: get_page
-    input:
-      book:
-        title: aleph
-        left_page: 44
-        size: 90
-      expected_result: 44
+    <<: *turn_page_input
+    expected_result: |
+      title: aleph
+      left_page: 8
+      size: 90
+  - box: turn_page_expect_page
+    <<: *turn_page_input
+    expected_left_page: 8
+  - box: get_page
+    book: |
+      title: aleph
+      left_page: 44
+      size: 90
+    expected_result: 44
