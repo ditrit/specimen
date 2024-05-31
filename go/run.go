@@ -30,7 +30,7 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 		}
 	}
 
-	// Populating input and codebox fields
+	// Populating the dataMatrices through the tree
 	var validTree NoduleRoot
 	for _, nodule := range noduleRoot {
 		dataMatrix := orderedstringmap.NewOSM()
