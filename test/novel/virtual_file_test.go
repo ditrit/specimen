@@ -15,24 +15,22 @@ func TestVirtualFile(t *testing.T) {
             content:
               -
                 box: turn_page
-                input:
-                  book:
-                    title: aleph
-                    left_page: 0
-                    size: 90
-                  turn_page_count: 4
-                  expected_result:
-                    title: aleph
-                    left_page: 8
-                    size: 90
+                book: |
+                  title: aleph
+                  left_page: 0
+                  size: 90
+                turn_page_count: 4
+                expected_result: |
+                  title: aleph
+                  left_page: 8
+                  size: 90
               -
                 box: get_page
-                input:
-                  book:
-                    title: aleph
-                    left_page: 44
-                    size: 90
-                  expected_result: 44
+                book: |
+                  title: aleph
+                  left_page: 44
+                  size: 90
+                expected_result: 44
             `)),
 		},
 	)

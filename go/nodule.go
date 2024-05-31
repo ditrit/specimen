@@ -174,9 +174,13 @@ func (n *Nodule) NewResolveDataMatrixIterator() func() Dict {
 
 		// Go through the keys to find which one is affected by the index change
 		for k, key := range dataOrder {
-			if index%sizeSlice[k] > 0 {
+			if index%sizeSlice[k] == 0 {
+				indexSlice[k] += 1
+				indexSlice[k] %= sizeSlice[k]
+			} else {
 				// bump the identified index
 				indexSlice[k] += 1
+				indexSlice[k] %= sizeSlice[k]
 				// update the combination entry corresponding to the identified key
 				combination[key] = n.DataMatrix[key][indexSlice[k]]
 				break

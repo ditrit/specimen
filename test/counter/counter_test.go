@@ -15,16 +15,12 @@ func TestCounting(t *testing.T) {
 		func(s *specimen.S, input specimen.Dict) {
 			expectedString, found := input["expected_count"]
 			if found {
-				expected, err := strconv.ParseInt(expectedString, 10, 32)
+				expected, err := strconv.Atoi(expectedString)
 				if err != nil {
 					panic(err)
 				}
 
-				s.ExpectEqual(
-					counter,
-					expected,
-					"count comparison",
-				)
+				s.ExpectEqual(counter, expected, "count comparison")
 			}
 			counter += 1
 		},
