@@ -75,7 +75,7 @@ impl Yaml {
     }
 }
 
-static BAD_VALUE: Yaml = Yaml {
+pub static BAD_VALUE: Yaml = Yaml {
     data: YamlData::BadValue,
     position: Position { line: 0, column: 0 },
 };

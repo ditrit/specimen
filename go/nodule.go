@@ -75,14 +75,14 @@ func (n *Nodule) InitializeTree() (err error) {
 	return
 }
 
-// Populate fills the DataMatrix and DataOrder fields from the Yaml data
+// Populate fills the DataMatrix with the Yaml data
 func (n *Nodule) Populate(dataMatrix orderedstringmap.OSM) (err error) {
-	// Todo: improve the performance by detecting all the cases where creating a copy of the dataMatrix and dataOrder is unneccessary
+	// Todo: improve the performance by detecting all the cases where creating a copy of the dataMatrix is unneccessary
 	if len(n.YamlNode.Content) == 0 {
 		return nil
 	}
 
-	// Cloning dataMatrix and dataOrder
+	// Cloning dataMatrix
 	n.DataMatrix = dataMatrix.Clone()
 
 	errorSlice := []error{}
