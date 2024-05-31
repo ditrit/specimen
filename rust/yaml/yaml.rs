@@ -1,8 +1,7 @@
 /// Note:
 /// This file was originally copy-pasted from yaml-rust
 use std::collections::BTreeMap;
-use std::f64;
-use std::i64;
+use std::fmt::{Display, Formatter};
 use std::mem;
 use std::ops::Index;
 use std::string;
@@ -60,6 +59,12 @@ pub struct Position {
     pub column: usize,
 }
 
+impl Display for Position {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), std::fmt::Error> {
+        write!(f, "{}:{}", self.line, self.column)
+    }
+}
+
 #[derive(Clone, Default, PartialEq, PartialOrd, Debug, Eq, Ord, Hash)]
 pub struct Yaml {
     pub data: YamlData,
@@ -106,7 +111,8 @@ impl MarkedEventReceiver for YamlLoader {
             line: marker.line(),
             column: marker.col(),
         };
-        // println!("EV {:?}", ev);
+
+        // println!("EV {:?}:{}", ev, position);
         match ev {
             Event::DocumentStart => {
                 // do nothing

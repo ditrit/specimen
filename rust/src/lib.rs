@@ -34,11 +34,11 @@ struct S {
 
 pub type Dict = HashMap<Box<str>, Box<str>>;
 
-pub trait Evaluator: std::panic::RefUnwindSafe {
-    fn evaluate(&self, tile: &Dict);
+pub trait Evaluator {
+    fn evaluate(&mut self, tile: &Dict) -> bool;
 }
 
-pub fn run(evaluator: Box<dyn Evaluator>, file_slice: &[file::File]) {
+pub fn run(mut evaluator: Box<dyn Evaluator>, file_slice: &[file::File]) {
     // Parse the data into a Root, which contains Nodule-s
 
     // let mut root: nodule::Root = Vec::with_capacity(file_slice.len());
@@ -52,7 +52,8 @@ pub fn run(evaluator: Box<dyn Evaluator>, file_slice: &[file::File]) {
     let root_nodule_vec: Vec<nodule::Nodule> = file_slice
         .iter()
         .zip(document_store.iter_mut())
-        .map(|(f, s)| nodule::Nodule::from_file(f, s))
+        .map(|(f, s)| nodule::Nodule::parse_file(f, s))
+        .flatten()
         .collect();
 
     // Populate the data_matrix of nodules throughout the tree
@@ -106,7 +107,7 @@ pub fn run(evaluator: Box<dyn Evaluator>, file_slice: &[file::File]) {
 
         // Nodule Run
         for tile in slab.into_resolved_data_matrix_iterator() {
-            run_tile(&mut s, &*tile.borrow(), Box::new(&*evaluator))
+            run_tile(&mut s, &*tile.borrow(), Box::new(&mut *evaluator))
         }
 
         // Nodule End
@@ -167,16 +168,14 @@ pub fn run(evaluator: Box<dyn Evaluator>, file_slice: &[file::File]) {
     )
 }
 
-fn run_tile(s: &mut S, tile: &Dict, evaluator: Box<&dyn Evaluator>) {
-    let outcome = std::panic::catch_unwind(|| evaluator.evaluate(tile));
-
-    match outcome {
-        Ok(_) => {}
-        Err(_) => {
+fn run_tile(s: &mut S, tile: &Dict, evaluator: Box<&mut dyn Evaluator>) {
+    match evaluator.evaluate(tile) {
+        true => {}
+        false => {
             if s.status == FailStatus::Aborted {
                 return;
             }
-            s.status = FailStatus::Panicked;
+            s.status = FailStatus::Failed;
         }
     }
 }
