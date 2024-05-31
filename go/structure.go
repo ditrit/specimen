@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// FailStatus specifies the kind of failure a slab produced, if any
 type FailStatus int
 
 const (
@@ -16,9 +17,10 @@ const (
 	Panicked
 )
 
-// S is a context structure for the Specimen package
+// S is a context structure for the Specimen package. It is preseved from the
+// run of a slab to the next
 type S struct {
-	t             *testing.T
+	T             *testing.T
 	slabCount     int
 	slabPassed    int
 	slabFailed    int
@@ -37,36 +39,22 @@ type File struct {
 	Content []byte
 }
 
-// Dict is a shorthand for map of strings to interfaces
-type Dict = map[string]interface{}
+// Dict is a shorthand for map of string to string
+type Dict = map[string]string
 
 // BoxFunction is the type that user-defined functions must implement in codeboxes
-type BoxFunction func(s *S, input Dict)
+type BoxFunction func(s *S, tile Dict)
 
-// Codebox is a function with a name to be matched with data from the yaml files
-type Codebox struct {
-	// Name is the name given when registring the codebox
-	Name string
-	// BoxFunction is the function which adapts to the code.
-	BoxFunction BoxFunction
-}
-
-// TreeRoot is used to gather the files for exploration by the focustree package
-type TreeRoot []Nodule
+// NoduleRoot is used to gather the files for exploration by the focustree package
+type NoduleRoot []Nodule
 
 // Nodule is a node inside a file
 type Nodule struct {
-	File    *File
-	Mapping *yaml.Node
-	// Kind is one of "File", "Node", "Slab" -- Kind is used in error reports
-	Kind string
-	// Location is a clickable link to the beginning of the nodule
-	Location string
-	Flag     focustree.FlagType
-	// Name is an indicative name for the nodule
-	Name     string
-	Children []Nodule
-	Codebox  *Codebox
-	Input    map[string]interface{}
-	Matrix   map[string][]interface{}
+	FilePath      string
+	YamlNode      *yaml.Node
+	Flag          focustree.FlagType
+	HasContentKey bool
+	Children      []Nodule
+	DataMatrix    map[string][]string
+	DataOrder     []string
 }

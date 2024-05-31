@@ -14,7 +14,7 @@ content:
         animal: parasprite
   - box: zoo
     content:
-      - name: manticore: # this slab should be ignored as well since it is not focused
+      - name: manticore # this slab should be ignored as well since it is not focused
         animal: manticore
         output: _never_
       - name: zebra

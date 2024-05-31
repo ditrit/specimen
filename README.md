@@ -180,7 +180,7 @@ go test ./test/counter ./test/danger ./test/novel ./test/zoo
 go test test/counter/counter_test.go
 go test test/danger/danger_test.go
 go test test/novel/novel_test.go
-go test test/novel/nullValue_test.go
+go test test/nullValue/nullValue_test.go
 go test test/zoo/zoo_test.go
 
 # python
@@ -217,11 +217,10 @@ scalar:
     - boolean
     - nullType
 
-# A termination can be a scalar or a list of scalars. In the case of a list,
-# the current branch will be demultiplied in subbranches. If you have two of
-# these subbranches or more, they produce the effect of a test matrixes or
-# test tensor.
-termination:
+# A tip can be a scalar or a list of scalars. In the case of a list, all the
+# combination of values taken from this list and lists of other parameters will
+# be generated and run. This produces the effect of a test matrix.
+tip:
   _oneOf:
     - scalar
     - _listOf: scalar
@@ -240,7 +239,7 @@ nodule:
       _in: ["PENDING", "FOCUS"]
   # all the entries of the mapping will be added to the descendant slabs of
   # this nodule and then passed to the code box, except for the `content` entry
-  _mapOf: { string: termination }
+  _mapOf: { string: tip }
 # Besides all the keys that are found in the yaml, the code box will be passed
 # an argument "title": an array of strings, the titles the library encountered
 # on its way to the tree leaf. The code box will also be passed an argument

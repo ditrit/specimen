@@ -6,15 +6,10 @@ import (
 	specimen "github.com/ditrit/specimen/go"
 )
 
-var virtualCodeboxSet = specimen.MakeCodeboxSet(map[string]specimen.BoxFunction{
-	"turn_page": codeboxSet["turn_page"].BoxFunction,
-	"get_page":  codeboxSet["get_page"].BoxFunction,
-})
-
 func TestVirtualFile(t *testing.T) {
 	specimen.Run(
 		t,
-		codeboxSet,
+		boxFunction,
 		[]specimen.File{
 			specimen.VirtualFileDedent("virtual_novel_data.yaml", []byte(`
             content:

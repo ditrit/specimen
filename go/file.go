@@ -16,16 +16,16 @@ func ReadLocalFile(path string) File {
 }
 
 // VirtualFile creates a specimen.File from scratch
-func VirtualFile(imaginary_path string, content []byte) File {
+func VirtualFile(imaginaryPath string, content []byte) File {
 	return File{
-		Path:    imaginary_path,
+		Path:    imaginaryPath,
 		Content: content,
 	}
 }
 
 // VirtualFileDedent dedents the given content and creates a specimen.File
-func VirtualFileDedent(imaginary_path string, content []byte) File {
-	return VirtualFile(imaginary_path, dedent(content))
+func VirtualFileDedent(imaginaryPath string, content []byte) File {
+	return VirtualFile(imaginaryPath, dedent(content))
 }
 
 // dedent removes common leading **spaces** (not tabs) from the lines of a given text
@@ -59,36 +59,36 @@ func dedent(text []byte) []byte {
 
 	// step three: compute the size of the buffer required to store the trimmed text
 	size := 0
-	line_start := 0
-	line_length := 0
+	lineStart := 0
+	lineLength := 0
 	for k, c := range text {
 		if c == '\n' {
-			line_length = k - line_start
-			if line_length > margin {
-				size += line_length - margin + 1
+			lineLength = k - lineStart
+			if lineLength > margin {
+				size += lineLength - margin + 1
 			} else {
 				size += 1
 			}
-			line_start = k + 1
+			lineStart = k + 1
 		}
 	}
-	line_length = len(text) - line_start
-	if line_length > margin {
-		size += line_length - margin
+	lineLength = len(text) - lineStart
+	if lineLength > margin {
+		size += lineLength - margin
 	}
 
 	// step four: copy the text while removing a margin size from each line
 	output := make([]byte, size)
 
-	line_start = 0
+	lineStart = 0
 	m := 0
 	for k, c := range text {
 		if c == '\n' {
 			output[m] = c
 			m += 1
-			line_start = k + 1
+			lineStart = k + 1
 		}
-		if k+1-line_start > margin {
+		if k+1-lineStart > margin {
 			output[m] = c
 			m += 1
 		}

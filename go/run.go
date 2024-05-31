@@ -9,70 +9,35 @@ import (
 	"time"
 
 	"github.com/ditrit/specimen/go/focustree"
-	"github.com/go-test/deep"
 )
 
-// Fail marks the slab as failed and saves the given information, if provided. It can be called multiple times for a single slab. All saved information will be reported.
-func (s *S) Fail(info string) {
-	s.status = Failed
-	if len(info) > 0 {
-		s.failInfo = append(s.failInfo, info)
-	}
-}
-
-// Abort marks the slab as aborted and saves the given information, if provided.
-func (s *S) Abort(info string) {
-	s.status = Aborted
-	if len(info) > 0 {
-		s.failInfo = append(s.failInfo, info)
-	}
-	panic(nil)
-}
-
-// ExpectEqual test if the two given values are equal data structures
-func (s *S) ExpectEqual(value, wanted interface{}, context string) {
-	if diff := deep.Equal(value, wanted); diff != nil {
-		if len(context) > 0 {
-			context = "(" + context + "): "
-		}
-		s.Fail(context + strings.Join(diff, ", "))
-	}
-}
-
-// MakeCodeboxSet names the box functions by their mapping key, making codeboxes
-func MakeCodeboxSet(codeboxMap map[string]BoxFunction) map[string]*Codebox {
-	set := make(map[string]*Codebox)
-	for name, function := range codeboxMap {
-		box := Codebox{Name: name, BoxFunction: function}
-		set[name] = &box
-	}
-	return set
-}
-
 // Load the data of the given files and runs the code sandboxes with it
-func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
-	s := S{t: t}
-	log.Printf("%s:\n", s.t.Name())
+func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
+	s := S{T: t}
+	log.Printf("%s:\n", s.T.Name())
 	// Todo: consider replacing all "log.Print(|f|ln)" by "s.t.Log(|f|ln)"
 	// (which would require passing s as parameter everywhere around)
 
-	// Parsing the data into a tree of Nodule-s, Nodule-s
-	var tree TreeRoot
-	for _, file := range dataFileSlice {
-		nodule := Nodule{File: &file, Kind: "File"}
-		err := nodule.InitializeFile()
+	// Parsing the data into a noduleRoot of Nodule-s, Nodule-s
+	var noduleRoot NoduleRoot
+	for _, file := range fileSlice {
+		nodule, err := NewNoduleFromFile(file)
 		if err != nil {
 			log.Println(err.Error())
 		} else {
-			tree = append(tree, nodule)
+			noduleRoot = append(noduleRoot, nodule)
 		}
 	}
 
 	// Populating input and codebox fields
-	var validTree TreeRoot
-	for _, nodule := range tree {
-		// err := nodule.Populate(codeboxSet, nil, map[string]interface{}{})
-		err := nodule.Populate(codeboxSet, nil, nil, nil)
+	var validTree NoduleRoot
+	for _, nodule := range noduleRoot {
+		err := nodule.Populate(
+			map[string][]string{
+				"filepath": {nodule.FilePath},
+			},
+			[]string{"filepath"},
+		)
 		if err != nil {
 			log.Println(err.Error())
 		} else {
@@ -101,7 +66,14 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 		s.failInfo = nil
 
 		// Nodule Run
-		slab.runCodebox(&s)
+		iterator := slab.NewResolveDataMatrixIterator()
+		for {
+			tile := iterator()
+			if tile == nil {
+				break
+			}
+			slab.runBoxFunction(&s, tile, boxFunction)
+		}
 
 		// Nodule End
 		s.slabCount += 1
@@ -117,7 +89,7 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 		}
 		// summarize the failures
 		if s.status != Pristine {
-			slabInfo := fmt.Sprintf("%s(%s)", slab.Name, slab.Location)
+			slabInfo := fmt.Sprintf("(%s)", slab.GetLocation())
 
 			info := strings.Join(s.failInfo, "; ")
 
@@ -125,9 +97,6 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 			switch s.status {
 			case Failed:
 				databoxInfo := ""
-				if len(slab.Name) > 0 {
-					databoxInfo = fmt.Sprintf("[nodule %s]", slab.Name)
-				}
 				message = fmt.Sprintf("FAIL%s", databoxInfo)
 			case Aborted:
 				message = "ABORT"
@@ -135,7 +104,7 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 				message = "PANIC"
 			}
 
-			message = fmt.Sprintf("%s[codebox: %s][slab: %s]: %s", message, slab.Codebox.Name, slabInfo, info)
+			message = fmt.Sprintf("%s[slab: %s]: %s", message, slabInfo, info)
 
 			s.failureReport = append(s.failureReport, message)
 		}
@@ -146,19 +115,19 @@ func Run(t *testing.T, codeboxSet map[string]*Codebox, dataFileSlice []File) {
 	// Reporting what has been saved in s
 	var outcome = "SUCCESS"
 	if len(s.failureReport) > 0 {
-		s.t.Fail()
+		s.T.Fail()
 		log.Println(strings.Join(s.failureReport, "\n"))
 		outcome = "FAILURE"
 	}
 	log.Printf(
-		"Ran %d slabs in %v\n"+
+		"Ran %d tiles in %v\n"+
 			"%s -- %d Passed | %d Failed | %d Aborted | %d Panicked",
 		s.slabCount, duration,
 		outcome, s.slabPassed, s.slabFailed, s.slabAborted, s.slabPanicked,
 	)
 }
 
-func (nodule Nodule) runCodebox(s *S) {
+func (nodule Nodule) runBoxFunction(s *S, tile Dict, box BoxFunction) {
 	defer func() {
 		// report that the codebox has panicked
 		if data := recover(); data != nil {
@@ -178,5 +147,5 @@ func (nodule Nodule) runCodebox(s *S) {
 			s.failInfo = append(s.failInfo, info)
 		}
 	}()
-	nodule.Codebox.BoxFunction(s, nodule.Input)
+	box(s, tile)
 }
