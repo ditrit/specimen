@@ -208,17 +208,6 @@ The content of a yaml test data file must match the `main` rule of the lidy sche
 ```yaml
 main: nodule
 
-# The PENDING flag tells the engine to skip the node and all its decendants.
-# The FOCUS flag tells the engine to skip all the OTHER nodes that do not have
-# the flag "FOCUS"
-flag:
-  _in: ["PENDING", "FOCUS"]
-
-# title is a string
-# if a title contains the exact keyword "PENDING" or "FOCUS", this keyword will
-# be copied to a `flag` field in the node corresponding to this title.
-title: string
-
 # scalar is any yaml scalar
 scalar:
   _oneOf:
@@ -229,8 +218,9 @@ scalar:
     - nullType
 
 # A termination can be a scalar or a list of scalars. In the case of a list,
-# the current branch will be demultiplied in subbranches, which in effect, this
-# allows to produce test matrixes.
+# the current branch will be demultiplied in subbranches. If you have two of
+# these subbranches or more, they produce the effect of a test matrixes or
+# test tensor.
 termination:
   _oneOf:
     - scalar
@@ -238,15 +228,18 @@ termination:
 
 nodule:
   _mapFacultative:
-    # content contains all the children of the current nodule. These children
-    # can have a title when `content` is a map, or no title when `content` is
-    # a list.
+    # content contains all the children of the current nodule. Nodes which
+    # contain a content entry are seen as tree nodes, while nodes which do
+    # not contain it are seen as leaves
     content:
-      _oneOf:
-        - _listOf: nodule
-        - _mapOf: { title: nodule }
-    flag: flag
-  # all the key-values will be passed to the code box
+      - _listOf: nodule
+    # The PENDING flag tells the engine to skip the node and all its decendants.
+    # The FOCUS flag tells the engine to skip all the OTHER nodes that do not
+    # have the flag "FOCUS"
+    flag:
+      _in: ["PENDING", "FOCUS"]
+  # all the entries of the mapping will be added to the descendant slabs of
+  # this nodule and then passed to the code box, except for the `content` entry
   _mapOf: { string: termination }
 # Besides all the keys that are found in the yaml, the code box will be passed
 # an argument "title": an array of strings, the titles the library encountered

@@ -6,18 +6,18 @@ content:
   - box: zoo
     flag: FOCUS
     content:
-      horse:
+      - name: horse
         animal: horse
         expected_result: horse
-      parasprite: # this slab should be ignored
+      - name: parasprite # this slab should be ignored
         flag: PENDING
         animal: parasprite
   - box: zoo
     content:
-      manticore: # this slab should be ignored as well since it is not focused
+      - name: manticore: # this slab should be ignored as well since it is not focused
         animal: manticore
         output: _never_
-      zebra:
+      - name: zebra
         flag: FOCUS
         animal: zebra
         expected_result: horse zebra
@@ -25,7 +25,6 @@ content:
     name: matrix animals
     box: zoo
     animal: [mouse, cat, dog]
-    input: {}
   - flag: FOCUS
     name: matrix check
     box: zoo
