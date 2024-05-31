@@ -10,16 +10,17 @@ impl Zoo {
 
     // Test util functions
     fn zoo(&mut self, tile: specimen::Dict) -> bool {
-        let animal = &tile["animal"];
-        let expected = &tile["expected_result"];
+        let animal = tile.get("animal");
+        let expected = tile.get("expected_result");
 
-        if animal.len() > 0 {
+        if let Some(animal) = animal {
             let output = self.add_animal(animal.to_owned());
 
-            if expected.len() > 0 {
+            if let Some(expected) = expected {
                 return output == *expected;
             }
         }
+
         return true;
     }
 

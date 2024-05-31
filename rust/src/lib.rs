@@ -49,34 +49,27 @@ pub fn run(mut evaluator: Box<dyn Evaluator>, file_slice: &[file::File]) {
 
     let mut document_store = Vec::from_iter(file_slice.iter().map(|_| Box::new(Vec::new())));
 
-    let root_nodule_vec: Vec<nodule::Nodule> = file_slice
+    let mut root_nodule_vec: Vec<nodule::Nodule> = file_slice
         .iter()
         .zip(document_store.iter_mut())
         .map(|(f, s)| nodule::Nodule::parse_file(f, s))
         .flatten()
         .collect();
 
-    // Populate the data_matrix of nodules throughout the tree
-    let children = root_nodule_vec
-        .into_iter()
-        .filter(|nodule| {
-            let mut data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>> = LinkedHashMap::new();
-            data_matrix.insert(
-                Box::from("file_path"),
-                Rc::new([Box::from((*nodule.file_path).to_owned())]),
+    for nodule in root_nodule_vec.iter_mut() {
+        let mut data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>> = LinkedHashMap::new();
+        data_matrix.insert(
+            Box::from("file_path"),
+            Rc::new([Box::from((*nodule.file_path).to_owned())]),
+        );
+
+        if let Err(e) = nodule.populate(&data_matrix) {
+            panic!(
+                "Failed to populate nodule data matrix for file {} because: {}",
+                nodule.file_path, e
             );
-            match nodule.populate(data_matrix) {
-                Ok(_) => true,
-                Err(e) => {
-                    eprintln!(
-                        "Failed to populate nodule data matrix for file {} because: {}",
-                        nodule.file_path, e
-                    );
-                    false
-                }
-            }
-        })
-        .collect::<Box<[nodule::Nodule]>>();
+        }
+    }
 
     let root = nodule::Nodule {
         node: &yaml::BAD_VALUE,
@@ -84,7 +77,7 @@ pub fn run(mut evaluator: Box<dyn Evaluator>, file_slice: &[file::File]) {
         is_leaf: false,
         file_path: Rc::from("".to_owned()),
         data_matrix: LinkedHashMap::new(),
-        children,
+        children: root_nodule_vec.into_boxed_slice(),
     };
 
     // Retrieving focused nodes, if any. This is done using a suffix tree-traversal: The presence of the FOCUS flag on a node is checked after all its children havec been checked. If a node which has FOCUS-ed children is FOCUS-ed itself, then its FOCUS flag is ignored and a warning is issued.
@@ -155,7 +148,7 @@ pub fn run(mut evaluator: Box<dyn Evaluator>, file_slice: &[file::File]) {
         "FAILURE"
     };
 
-    println!(
+    eprintln!(
         "Ran {} tiles in {}\n \
         {} -- {} Passed | {} Failed | {} Aborted | {} Panicked",
         s.slab_count,

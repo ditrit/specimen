@@ -2,7 +2,7 @@
 //! from the leaves of the tree, while supporting the option for the tree
 //! to skip or focus certain branches.
 
-#[derive(Debug, Default, Clone, Copy, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Flag {
     #[default]
     None,

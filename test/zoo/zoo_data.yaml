@@ -36,7 +36,7 @@ content:
     leg: "4"
     horn: "0"
     content:
-      - tail: true
+      - tail: "true"
         name: earthpony
       - horn: "2"
         name: deer
