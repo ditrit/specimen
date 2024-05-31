@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ditrit/specimen/go/focustree"
+	"github.com/ditrit/specimen/go/orderedstringmap"
 )
 
 // Load the data of the given files and runs the code sandboxes with it
@@ -32,12 +33,9 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 	// Populating input and codebox fields
 	var validTree NoduleRoot
 	for _, nodule := range noduleRoot {
-		err := nodule.Populate(
-			map[string][]string{
-				"filepath": {nodule.FilePath},
-			},
-			[]string{"filepath"},
-		)
+		dataMatrix := orderedstringmap.NewOSM()
+		dataMatrix.Set("filepath", []string{nodule.FilePath})
+		err := nodule.Populate(dataMatrix)
 		if err != nil {
 			log.Println(err.Error())
 		} else {

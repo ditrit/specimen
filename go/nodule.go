@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ditrit/specimen/go/focustree"
+	"github.com/ditrit/specimen/go/orderedstringmap"
 	"github.com/ditrit/specimen/go/syaml"
 	"gopkg.in/yaml.v3"
 )
@@ -46,7 +47,7 @@ func NewNoduleFromFile(file File) (n Nodule, err error) {
 // The initialization creates all the nodules corresponding to the mapping nodes of the yaml tree, except for the PENDING nodes. It fills the fields Flag, HasContentKey and Children. **It expects YamlNode and FilePath to be already set**, and it sets YamlNode and FilePath for its children.
 func (n *Nodule) InitializeTree() (err error) {
 	if !syc.IsMapping(n.YamlNode) {
-		err = fmt.Errorf("the root of the document must be a yaml mapping")
+		err = fmt.Errorf("the content descendant nodes must be yaml mappings")
 		return
 	}
 	flagNode := syc.MapTryGetValue(n.YamlNode, "flag")
@@ -75,23 +76,14 @@ func (n *Nodule) InitializeTree() (err error) {
 }
 
 // Populate fills the DataMatrix and DataOrder fields from the Yaml data
-func (n *Nodule) Populate(dataMatrix map[string][]string, dataOrder []string) (err error) {
+func (n *Nodule) Populate(dataMatrix orderedstringmap.OSM) (err error) {
 	// Todo: improve the performance by detecting all the cases where creating a copy of the dataMatrix and dataOrder is unneccessary
 	if len(n.YamlNode.Content) == 0 {
 		return nil
 	}
 
 	// Cloning dataMatrix and dataOrder
-	n.DataMatrix = map[string][]string{}
-	for k, v := range dataMatrix {
-		n.DataMatrix[k] = v
-	}
-	n.DataOrder = make(
-		[]string,
-		len(dataOrder),
-		len(dataOrder)+len(n.YamlNode.Content)/2,
-	)
-	copy(n.DataOrder, dataOrder)
+	n.DataMatrix = dataMatrix.Clone()
 
 	errorSlice := []error{}
 
@@ -106,14 +98,9 @@ func (n *Nodule) Populate(dataMatrix map[string][]string, dataOrder []string) (e
 			for _, entry := range value.Content {
 				slice = append(slice, entry.Value)
 			}
-			n.DataMatrix[key.Value] = slice
-			n.DataOrder = append(n.DataOrder, key.Value)
+			n.DataMatrix.Set(key.Value, slice)
 		} else if value.Kind == yaml.ScalarNode {
-			n.DataMatrix[key.Value] = []string{value.Value}
-			n.DataOrder = append(n.DataOrder, key.Value)
-			// /!\ TODO: extract DataMatrix&DataOrder to their own module and
-			// perform a check to see if the entry is already in the map, so
-			// as to avoid duplicate entries in the DataOrder slice.
+			n.DataMatrix.Set(key.Value, []string{value.Value})
 		} else {
 			errorSlice = append(errorSlice, n.Errorf("Unexpected node kind [%d] for key [%s]", value.Kind, key.Value))
 		}
@@ -121,7 +108,7 @@ func (n *Nodule) Populate(dataMatrix map[string][]string, dataOrder []string) (e
 
 	// Recursing over children
 	for k := range n.Children {
-		errorSlice = append(errorSlice, n.Children[k].Populate(n.DataMatrix, n.DataOrder))
+		errorSlice = append(errorSlice, n.Children[k].Populate(n.DataMatrix))
 	}
 
 	err = errors.Join(errorSlice...)
@@ -134,17 +121,18 @@ func (n *Nodule) Populate(dataMatrix map[string][]string, dataOrder []string) (e
 func (n *Nodule) NewResolveDataMatrixIterator() func() Dict {
 	// reverse the dataOrder so that we iterate quickly on the latest keys, and
 	// more slowly in the earlier keys
-	dataOrder := make([]string, len(n.DataOrder))
-	for k, v := range n.DataOrder {
-		dataOrder[len(n.DataOrder)-1-k] = v
+	length := n.DataMatrix.Len()
+	dataOrder := make([]string, length)
+	for k, key := range n.DataMatrix.Keys() {
+		dataOrder[length-1-k] = key
 	}
 
 	// Calculate the total number of combinations and the intermediate slice
 	// sizes
 	totalCombinations := 1
-	sizeSlice := make([]int, 0, len(n.DataOrder))
+	sizeSlice := make([]int, 0, len(dataOrder))
 	for _, key := range dataOrder {
-		set := n.DataMatrix[key]
+		set := n.DataMatrix.Get(key)
 		totalCombinations *= len(set)
 		sizeSlice = append(sizeSlice, totalCombinations)
 	}
@@ -157,7 +145,7 @@ func (n *Nodule) NewResolveDataMatrixIterator() func() Dict {
 	combination := Dict{}
 	// Initialize the combination
 	for k, key := range dataOrder {
-		combination[key] = n.DataMatrix[key][indexSlice[k]]
+		combination[key] = n.DataMatrix.Get(key)[indexSlice[k]]
 		// ^ Note that in this loop, indexSlice[k] is actually always 0
 	}
 
@@ -182,7 +170,7 @@ func (n *Nodule) NewResolveDataMatrixIterator() func() Dict {
 				indexSlice[k] += 1
 				indexSlice[k] %= sizeSlice[k]
 				// update the combination entry corresponding to the identified key
-				combination[key] = n.DataMatrix[key][indexSlice[k]]
+				combination[key] = n.DataMatrix.Get(key)[indexSlice[k]]
 				break
 			}
 		}

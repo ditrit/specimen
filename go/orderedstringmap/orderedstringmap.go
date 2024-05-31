@@ -37,7 +37,7 @@ func (o *OSM) Set(key string, value []string) {
 			if o.order[k] == key {
 				shifting = true
 			}
-			if shifting {
+			if shifting && k+1 < len(o.order) {
 				o.order[k] = o.order[k+1]
 			}
 		}
