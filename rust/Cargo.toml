@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 focustree = { path = "./focustree" }
 yaml = { path = "./yaml" }
+linked-hash-map = "0.5.6"
 
 [lib]

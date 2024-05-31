@@ -17,6 +17,7 @@ name = "specimen"
 version = "0.1.0"
 dependencies = [
  "focustree",
+ "linked-hash-map",
  "yaml",
 ]
 
@@ -24,7 +25,6 @@ dependencies = [
 name = "yaml"
 version = "0.1.0"
 dependencies = [
- "linked-hash-map",
  "yaml-rust",
 ]
 
