@@ -7,9 +7,6 @@ edition = "2021"
 
 [dependencies]
 focustree = { path = "./focustree" }
-linked-hash-map = "0.5.6"
-# ^ Note: we'll want to keep this dependency version in sync with that
-# of the yaml-rust dependency "linked-hash-map"
-yaml-rust = "0.4.5"
+yaml = { path = "./yaml" }
 
 [lib]
