@@ -3,7 +3,7 @@ package nullValue_test
 import (
 	"testing"
 
-	"github.com/ditrit/specimen/go/specimen"
+	specimen "github.com/ditrit/specimen/go"
 )
 
 // This test ensures that the null value does not crash the library engine

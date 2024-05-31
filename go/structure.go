@@ -3,7 +3,7 @@ package specimen
 import (
 	"testing"
 
-	"github.com/ditrit/specimen/go/specimen/focustree"
+	"github.com/ditrit/specimen/go/focustree"
 	"gopkg.in/yaml.v3"
 )
 

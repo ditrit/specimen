@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ditrit/specimen/go/specimen/focustree"
+	"github.com/ditrit/specimen/go/focustree"
 	"github.com/go-test/deep"
 )
 

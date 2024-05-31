@@ -3,7 +3,7 @@ package novel_test
 import (
 	"testing"
 
-	"github.com/ditrit/specimen/go/specimen"
+	specimen "github.com/ditrit/specimen/go"
 	"github.com/ditrit/specimen/test/novel"
 )
 
