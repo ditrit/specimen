@@ -1,0 +1,15 @@
+[package]
+name = "specimen"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+focustree = { path = "./focustree" }
+linked-hash-map = "0.5.6"
+# ^ Note: we'll want to keep this dependency version in sync with that
+# of the yaml-rust dependency "linked-hash-map"
+yaml-rust = "0.4.5"
+
+[lib]
