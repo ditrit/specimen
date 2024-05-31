@@ -205,7 +205,8 @@ nodule:
     # will not appear in the data passed to the box function
     about: any
   # all the entries of the mapping will be added to the descendant slabs of
-  # this nodule and then passed to the code box, except for the `content` entry
+  # this nodule and then passed to the code box, except for the `content`,
+  # `flag` and `about` entries
   _mapOf: { string: tip }
 # Besides all the keys that are found in the yaml, the test box will be passed
 # an argument "filepath" which contains the path to the yaml file, as specified
