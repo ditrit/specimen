@@ -1,10 +1,10 @@
-package zoo_test
+package counter_test
 
 import (
 	"strconv"
 	"testing"
 
-	specimen "github.com/ditrit/specimen/go"
+	"github.com/ditrit/specimen/go/specimen"
 )
 
 var counter = 0
@@ -25,7 +25,7 @@ func TestCounting(t *testing.T) {
 			counter += 1
 		},
 		[]specimen.File{
-			specimen.ReadLocalFile("counter_data.yaml"),
+			specimen.ReadLocalFile("./counter_data.yaml"),
 		},
 	)
 }

@@ -1,10 +1,10 @@
 package specimen
 
-import "io/ioutil"
+import "os"
 
 // ReadLocalFile reads a file from the file system and returns a specimen.File
 func ReadLocalFile(path string) File {
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}

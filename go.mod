@@ -1,6 +1,6 @@
-module github.com/ditrit/specimen/go
+module github.com/ditrit/specimen
 
-go 1.17
+go 1.21
 
 require (
 	github.com/go-test/deep v1.1.0

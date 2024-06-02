@@ -3,8 +3,8 @@ package specimen
 import (
 	"testing"
 
-	"github.com/ditrit/specimen/go/focustree"
-	"github.com/ditrit/specimen/go/orderedstringmap"
+	"github.com/ditrit/specimen/go/specimen/focustree"
+	"github.com/ditrit/specimen/go/specimen/orderedstringmap"
 	"gopkg.in/yaml.v3"
 )
 

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ditrit/specimen/go/focustree"
-	"github.com/ditrit/specimen/go/orderedstringmap"
+	"github.com/ditrit/specimen/go/specimen/focustree"
+	"github.com/ditrit/specimen/go/specimen/orderedstringmap"
 )
 
 // Load the data of the given files and runs the code sandboxes with it

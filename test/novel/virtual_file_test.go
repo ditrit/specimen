@@ -3,7 +3,7 @@ package novel_test
 import (
 	"testing"
 
-	specimen "github.com/ditrit/specimen/go"
+	specimen "github.com/ditrit/specimen/go/specimen"
 )
 
 func TestVirtualFile(t *testing.T) {

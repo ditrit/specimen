@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ditrit/specimen/go/focustree"
-	"github.com/ditrit/specimen/go/orderedstringmap"
-	"github.com/ditrit/specimen/go/syaml"
+	"github.com/ditrit/specimen/go/specimen/focustree"
+	"github.com/ditrit/specimen/go/specimen/orderedstringmap"
+	"github.com/ditrit/specimen/go/specimen/syaml"
 	"gopkg.in/yaml.v3"
 )
 

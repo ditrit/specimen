@@ -3,7 +3,7 @@ package specimen
 import (
 	"log"
 
-	"github.com/ditrit/specimen/go/focustree"
+	"github.com/ditrit/specimen/go/specimen/focustree"
 )
 
 // This file implement the focustree.Node interface for the NoduleRoot and for Nodules

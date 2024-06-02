@@ -3,7 +3,7 @@ package nullValue_test
 import (
 	"testing"
 
-	specimen "github.com/ditrit/specimen/go"
+	"github.com/ditrit/specimen/go/specimen"
 )
 
 // This test ensures that the null value does not crash the library engine
@@ -17,7 +17,7 @@ func TestNullValue(t *testing.T) {
 		t,
 		nullValue,
 		[]specimen.File{
-			specimen.ReadLocalFile("nullValue_data.yaml"),
+			specimen.ReadLocalFile("./nullValue_data.yaml"),
 		},
 	)
 }

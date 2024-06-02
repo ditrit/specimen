@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	specimen "github.com/ditrit/specimen/go"
+	"github.com/ditrit/specimen/go/specimen"
 	"github.com/ditrit/specimen/test/zoo"
 )
 
@@ -53,7 +53,7 @@ func TestFocusZoo(t *testing.T) {
 			}
 		},
 		[]specimen.File{
-			specimen.ReadLocalFile("zoo_data.yaml"),
+			specimen.ReadLocalFile("./zoo_data.yaml"),
 		},
 	)
 }

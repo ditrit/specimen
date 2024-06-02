@@ -4,7 +4,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/ditrit/specimen/go/focustree"
+	"github.com/ditrit/specimen/go/specimen/focustree"
 	"gopkg.in/yaml.v3"
 )
 

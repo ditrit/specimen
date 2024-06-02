@@ -3,7 +3,7 @@ package specimen
 import (
 	"log"
 
-	"github.com/ditrit/specimen/go/syaml"
+	"github.com/ditrit/specimen/go/specimen/syaml"
 )
 
 var _ = func() int {

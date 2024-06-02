@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	specimen "github.com/ditrit/specimen/go"
+	"github.com/ditrit/specimen/go/specimen"
 	"github.com/ditrit/specimen/test/novel"
 
 	"gopkg.in/yaml.v3"
@@ -61,8 +61,8 @@ func TestNovel(t *testing.T) {
 		t,
 		boxFunction,
 		[]specimen.File{
-			specimen.ReadLocalFile("novel_data.yaml"),
-			specimen.ReadLocalFile("novel_data_with_alias.yaml"),
+			specimen.ReadLocalFile("./novel_data.yaml"),
+			specimen.ReadLocalFile("./novel_data_with_alias.yaml"),
 		},
 	)
 }
