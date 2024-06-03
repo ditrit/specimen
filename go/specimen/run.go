@@ -133,9 +133,9 @@ func (nodule Nodule) runBoxFunction(s *S, tile Dict, box BoxFunction) {
 			report := strings.TrimSuffix(string(debug.Stack()), "\n")
 			info := "\n>   " + strings.ReplaceAll(report, "\n", "\n>   ")
 			if v, ok := data.(string); ok {
-				info += v
+				info = fmt.Sprintf("\n>>> %s%s", v, info)
 			} else if v, ok := data.(error); ok {
-				info += v.Error()
+				info = fmt.Sprintf("\n>>> %s%s", v.Error(), info)
 			}
 
 			s.status = Panicked
