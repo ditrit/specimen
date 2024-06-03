@@ -118,7 +118,7 @@ func (n *Nodule) Populate(dataMatrix orderedstringmap.OSM) (err error) {
 
 // TODO: make it so inserting a key in n.DataOrder checks and when present, removes the older instance of the key.
 
-func (n *Nodule) NewResolveDataMatrixIterator() func() Dict {
+func (n *Nodule) NewResolveDataMatrixIterator() func() (Dict, int) {
 	// reverse the dataOrder so that we iterate quickly on the latest keys, and
 	// more slowly in the earlier keys
 	length := n.DataMatrix.Len()
@@ -151,13 +151,13 @@ func (n *Nodule) NewResolveDataMatrixIterator() func() Dict {
 
 	// Create a closure-based iterator function
 	index := 0
-	return func() Dict {
+	return func() (Dict, int) {
 		if index == 0 {
 			index += 1
-			return combination
+			return combination, (index - 1)
 		} else if index == totalCombinations {
 			index += 1
-			return nil
+			return nil, (index - 1)
 		}
 
 		// Go through the keys to find which one is affected by the index change
@@ -175,6 +175,6 @@ func (n *Nodule) NewResolveDataMatrixIterator() func() Dict {
 			}
 		}
 		index += 1
-		return combination
+		return combination, (index - 1)
 	}
 }

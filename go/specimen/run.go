@@ -55,55 +55,53 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 	// Run all the selected slab
 	for _, leaf := range selectedLeaves {
 		slab := leaf.(Nodule)
-		// Pass the slab data to the testbox
+		// Pass the tile data to the testbox
 		// - Manage the context (s, test start and test end)
 		// - Recover from any panic that might arise during the testbox call
-		// - Check the output if an expected output is provided
-		// Nodule Start
-		s.status = Pristine
-		s.failInfo = nil
 
-		// Nodule Run
 		iterator := slab.NewResolveDataMatrixIterator()
 		for {
-			tile := iterator()
+			tile, index := iterator()
 			if tile == nil {
 				break
 			}
+			// Tile Start
+			s.status = Pristine
+			s.failInfo = nil
+
+			// Tile Run
 			slab.runBoxFunction(&s, tile, boxFunction)
-		}
 
-		// Nodule End
-		s.slabCount += 1
-		switch s.status {
-		case Pristine:
-			s.slabPassed += 1
-		case Failed:
-			s.slabFailed += 1
-		case Aborted:
-			s.slabAborted += 1
-		case Panicked:
-			s.slabPanicked += 1
-		}
-		// summarize the failures
-		if s.status != Pristine {
-			slabInfo := fmt.Sprintf("(%s)", slab.GetLocation())
-
-			info := strings.Join(s.failInfo, "; ")
-
-			message := ""
+			// Tile End
+			s.tileCount += 1
 			switch s.status {
+			case Pristine:
+				s.tilePassed += 1
 			case Failed:
-				message = "FAIL"
+				s.tileFailed += 1
 			case Aborted:
-				message = "ABORT"
+				s.tileAborted += 1
 			case Panicked:
-				message = "PANIC"
+				s.tilePanicked += 1
 			}
+			// summarize the failures
+			if s.status != Pristine {
+				info := strings.Join(s.failInfo, "; ")
 
-			message = fmt.Sprintf("%s[slab: %s]: %s", message, slabInfo, info)
+				word := ""
+				switch s.status {
+				case Failed:
+					word = "FAIL"
+				case Aborted:
+					word = "ABORT"
+				case Panicked:
+					word = "PANIC"
+				}
 
-			s.failureReport = append(s.failureReport, message)
+				message := fmt.Sprintf("%s[slab: %s][%d]: %s", word, slab.GetLocation(), index, info)
+
+				s.failureReport = append(s.failureReport, message)
+			}
 		}
 	}
 
@@ -119,8 +117,8 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 	log.Printf(
 		"Ran %d tiles in %v\n"+
 			"%s -- %d Passed | %d Failed | %d Aborted | %d Panicked",
-		s.slabCount, duration,
-		outcome, s.slabPassed, s.slabFailed, s.slabAborted, s.slabPanicked,
+		s.tileCount, duration,
+		outcome, s.tilePassed, s.tileFailed, s.tileAborted, s.tilePanicked,
 	)
 }
 

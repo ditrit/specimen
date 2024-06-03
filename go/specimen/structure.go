@@ -22,11 +22,11 @@ const (
 // run of a slab to the next
 type S struct {
 	T             *testing.T
-	slabCount     int
-	slabPassed    int
-	slabFailed    int
-	slabAborted   int
-	slabPanicked  int
+	tileCount     int
+	tilePassed    int
+	tileFailed    int
+	tileAborted   int
+	tilePanicked  int
 	failureReport []string
 
 	// The below values are reset for each slab
