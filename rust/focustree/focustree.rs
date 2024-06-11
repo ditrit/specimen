@@ -121,7 +121,7 @@ mod tests {
         //    7   8
         //   / \
         //  9   10
-        // The leaves are 4, 9, 10 and 6.
+        // The leaves are 4, 9, 10, 8 and 6.
         // The focused nodes are 2, 7 and 6.
         // The selected leaves should thus be in order: 9, 10, 6.
 

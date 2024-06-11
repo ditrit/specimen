@@ -216,12 +216,12 @@ pub struct DataMatrixIterator {
 }
 
 impl Iterator for DataMatrixIterator {
-    type Item = RefCell<Dict>;
+    type Item = Dict;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index == 0 {
             self.index += 1;
-            return Some(RefCell::clone(&self.combination));
+            return Some(self.combination.borrow().clone());
         } else if self.index >= self.total_combinations {
             return None;
         }
@@ -245,6 +245,6 @@ impl Iterator for DataMatrixIterator {
         }
 
         self.index += 1;
-        Some(RefCell::clone(&self.combination))
+        Some(self.combination.borrow().clone())
     }
 }

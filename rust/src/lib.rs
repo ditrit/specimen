@@ -29,23 +29,13 @@ struct S {
     failure_report: Vec<Box<str>>,
 
     status: FailStatus,
-    fail_info: Vec<Box<str>>,
+    fail_info: Box<str>,
 }
 
 pub type Dict = HashMap<Box<str>, Box<str>>;
 
-pub trait Evaluator {
-    fn evaluate(&mut self, tile: &Dict) -> bool;
-}
-
-pub fn run(mut evaluator: Box<dyn Evaluator>, file_slice: &[file::File]) {
+pub fn run(test_box: &mut dyn FnMut(&Dict) -> Result<(), Box<str>>, file_slice: &[file::File]) {
     // Parse the data into a Root, which contains Nodule-s
-
-    // let mut root: nodule::Root = Vec::with_capacity(file_slice.len());
-    // let mut document_store = Vec::from_iter((0..file_slice.len()).map(|_| Box::new(Vec::new())));
-    // for (f, s) in file_slice.iter().zip(document_store.iter_mut()) {
-    //     root.push(nodule::Nodule::from_file(f, s));
-    // }
 
     let mut document_store = Vec::from_iter(file_slice.iter().map(|_| Box::new(Vec::new())));
 
@@ -89,51 +79,59 @@ pub fn run(mut evaluator: Box<dyn Evaluator>, file_slice: &[file::File]) {
     // Run all the selected leaves
     let mut s = S::default();
     for slab in selected_leaves.into_iter() {
-        // Pass the slab data to the testbox
-        // - Manage the context (s, test start and test end)
-        // - Recover from any panic that might arise during the testbox call
-
-        // Nodule Start
-        s.status = FailStatus::Pristine;
-        s.fail_info = Vec::new();
         let slab_location = slab.get_location();
 
-        // Nodule Run
-        for tile in slab.into_resolved_data_matrix_iterator() {
-            run_tile(&mut s, &*tile.borrow(), Box::new(&mut *evaluator))
-        }
+        for (index, tile) in slab.into_resolved_data_matrix_iterator().enumerate() {
+            // Pass the slab data to the testbox
+            // - Manage the context (s, test start and test end)
+            // - Recover from any panic that might arise during the testbox call
 
-        // Nodule End
-        s.slab_count += 1;
-        match s.status {
-            FailStatus::Pristine => {
-                s.slab_passed += 1;
-            }
-            FailStatus::Failed => {
-                s.slab_failed += 1;
-            }
-            FailStatus::Aborted => {
-                s.slab_aborted += 1;
-            }
-            FailStatus::Panicked => {
-                s.slab_panicked += 1;
-            }
-        }
-        // summarize the failures
-        if s.status != FailStatus::Pristine {
-            let slab_info = format!("({})", slab_location);
+            // Tile Start
+            s.status = FailStatus::Pristine;
+            s.fail_info = "".into();
 
-            let info = s.fail_info.join("; ");
+            // Tile Run
+            match test_box(&tile) {
+                Ok(()) => {}
+                Err(message) => {
+                    if message.starts_with("ABORT") {
+                        s.status = FailStatus::Aborted;
+                        s.fail_info = message["ABORT".len()..].into();
+                    } else {
+                        s.status = FailStatus::Failed;
+                        s.fail_info = message;
+                    }
+                }
+            }
 
-            let message = match s.status {
-                FailStatus::Failed => "FAIL",
-                FailStatus::Aborted => "ABORT",
-                FailStatus::Panicked => "PANIC",
-                _ => "",
-            };
-            let message = format!("{}[slab: {}]: {}", message, slab_info, info);
+            // Tile End
+            s.slab_count += 1;
+            match s.status {
+                FailStatus::Pristine => {
+                    s.slab_passed += 1;
+                }
+                FailStatus::Failed => {
+                    s.slab_failed += 1;
+                }
+                FailStatus::Aborted => {
+                    s.slab_aborted += 1;
+                }
+                FailStatus::Panicked => {
+                    s.slab_panicked += 1;
+                }
+            }
+            // summarize the failures
+            if s.status != FailStatus::Pristine {
+                let word = match s.status {
+                    FailStatus::Failed => "FAIL",
+                    FailStatus::Aborted => "ABORT",
+                    FailStatus::Panicked => "PANIC",
+                    _ => "",
+                };
+                let message = format!("{word}[slab: {slab_location}][{index}]: {}", s.fail_info);
 
-            s.failure_report.push(Box::from(message));
+                s.failure_report.push(Box::from(message));
+            }
         }
     }
 
@@ -159,16 +157,4 @@ pub fn run(mut evaluator: Box<dyn Evaluator>, file_slice: &[file::File]) {
         s.slab_aborted,
         s.slab_panicked,
     )
-}
-
-fn run_tile(s: &mut S, tile: &Dict, evaluator: Box<&mut dyn Evaluator>) {
-    match evaluator.evaluate(tile) {
-        true => {}
-        false => {
-            if s.status == FailStatus::Aborted {
-                return;
-            }
-            s.status = FailStatus::Failed;
-        }
-    }
 }

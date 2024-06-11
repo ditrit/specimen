@@ -1,26 +1,23 @@
-#[derive(Debug, Default)]
-struct Runner {
-    counter: u32,
-}
-
-impl specimen::Evaluator for Runner {
-    fn evaluate(&mut self, tile: &specimen::Dict) -> bool {
-        let result = match tile.get("expected_count") {
-            Some(expected_count) => {
-                let expected_count = expected_count.parse().unwrap();
-                self.counter == expected_count
-            }
-            None => true,
-        };
-        self.counter += 1;
-        result
-    }
-}
-
 #[test]
 fn test_counter() {
+    let mut counter = 0;
+
     specimen::run(
-        Box::new(Runner::default()),
+        &mut |tile: &specimen::Dict| -> Result<(), Box<str>> {
+            match tile.get("expected_count") {
+                Some(expected_count) => {
+                    let expected_count = expected_count.parse().unwrap();
+                    if counter != expected_count {
+                        return Err(Box::from(format!(
+                            "Counter ({counter}) did not match expected count ({expected_count})",
+                        )));
+                    }
+                }
+                None => {}
+            };
+            counter += 1;
+            Ok(())
+        },
         &[specimen::file::File::read_local_file(
             "../test/counter/counter_data.yaml",
         )],

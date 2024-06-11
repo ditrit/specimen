@@ -38,31 +38,28 @@ impl Zoo {
     }
 }
 
-#[derive(Debug, Default)]
-struct Runner {
-    zoo: Zoo,
-}
-
-impl specimen::Evaluator for Runner {
-    fn evaluate(&mut self, tile: &specimen::Dict) -> bool {
-        if tile.get("box").is_none() {
-            eprintln!("Encountered tile without a box entry: {:?}", tile);
-        }
-        if tile["box"] == Box::from("zoo") {
-            self.zoo.zoo(tile.to_owned())
-        } else if tile["box"] == Box::from("animalkind") {
-            self.zoo.animal_kind(tile.to_owned())
-        } else {
-            eprintln!("Encountered unhandled box name: {}", tile["box"]);
-            false
-        }
-    }
-}
-
 #[test]
 fn test_focus_zoo() {
+    let mut zoo = Zoo(Vec::new());
+
     specimen::run(
-        Box::new(Runner::default()),
+        &mut |tile: &specimen::Dict| -> Result<(), Box<str>> {
+            let result = if tile.get("box").is_none() {
+                format!("Encountered tile without a box entry: {:?}", tile);
+                false
+            } else if tile["box"] == Box::from("zoo") {
+                zoo.zoo(tile.to_owned())
+            } else if tile["box"] == Box::from("animalkind") {
+                zoo.animal_kind(tile.to_owned())
+            } else {
+                eprintln!("Encountered unhandled box name: {}", tile["box"]);
+                false
+            };
+            match result {
+                true => Ok(()),
+                false => Err(Box::from("Failed")),
+            }
+        },
         &[specimen::file::File::read_local_file(
             "../test/zoo/zoo_data.yaml",
         )],

@@ -1,11 +1,11 @@
 about:
   book: &book
     title: aleph
-    left_page: 0
-    size: 90
+    left_page: "0"
+    size: "90"
   turn_page_input: &turn_page_input
     book: *book
-    turn_page_count: 4
+    turn_page_count: "4"
 content:
   - name: turn_page_output
     box: turn_page
@@ -16,10 +16,10 @@ content:
       size: 90
   - box: turn_page_expect_page
     <<: *turn_page_input
-    expected_left_page: 8
+    expected_left_page: "8"
   - box: get_page
     book: |
       title: aleph
       left_page: 44
       size: 90
-    expected_result: 44
+    expected_result: "44"
