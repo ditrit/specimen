@@ -23,6 +23,6 @@ impl<'a> focustree::Tree<Nodule<'a>> for Nodule<'a> {
     }
 
     fn warning(&self, message: &str) {
-        println!("Warning: {}", message);
+        println!("Warning({}): {}", self.get_location(), message);
     }
 }

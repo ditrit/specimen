@@ -21,11 +21,11 @@ pub enum FailStatus {
 
 #[derive(Default)]
 struct S {
-    slab_count: u32,
-    slab_passed: u32,
-    slab_failed: u32,
-    slab_aborted: u32,
-    slab_panicked: u32,
+    tile_count: u32,
+    tile_passed: u32,
+    tile_failed: u32,
+    tile_aborted: u32,
+    tile_panicked: u32,
     failure_report: Vec<Box<str>>,
 
     status: FailStatus,
@@ -105,19 +105,19 @@ pub fn run(test_box: &mut dyn FnMut(&Dict) -> Result<(), Box<str>>, file_slice: 
             }
 
             // Tile End
-            s.slab_count += 1;
+            s.tile_count += 1;
             match s.status {
                 FailStatus::Pristine => {
-                    s.slab_passed += 1;
+                    s.tile_passed += 1;
                 }
                 FailStatus::Failed => {
-                    s.slab_failed += 1;
+                    s.tile_failed += 1;
                 }
                 FailStatus::Aborted => {
-                    s.slab_aborted += 1;
+                    s.tile_aborted += 1;
                 }
                 FailStatus::Panicked => {
-                    s.slab_panicked += 1;
+                    s.tile_panicked += 1;
                 }
             }
             // summarize the failures
@@ -149,12 +149,12 @@ pub fn run(test_box: &mut dyn FnMut(&Dict) -> Result<(), Box<str>>, file_slice: 
     eprintln!(
         "Ran {} tiles in {}\n \
         {} -- {} Passed | {} Failed | {} Aborted | {} Panicked",
-        s.slab_count,
+        s.tile_count,
         duration.as_secs(),
         outcome,
-        s.slab_passed,
-        s.slab_failed,
-        s.slab_aborted,
-        s.slab_panicked,
+        s.tile_passed,
+        s.tile_failed,
+        s.tile_aborted,
+        s.tile_panicked,
     )
 }

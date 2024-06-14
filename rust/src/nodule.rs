@@ -23,7 +23,7 @@ impl<'a> Nodule<'a> {
         let file_path = Rc::from(file.path.to_owned());
 
         let mut document_vec = yaml::YamlLoader::load_from_str(&file.content)
-            .expect(&format!("Failed to parse YAML from file {}.", &file.path));
+            .expect(&format!("failed to parse YAML from file {}.", &file.path));
 
         std::mem::swap(&mut document_vec, store);
 
@@ -46,8 +46,8 @@ impl<'a> Nodule<'a> {
                     flag: focustree::Flag::None,
                     is_leaf: true,
                     file_path: Rc::clone(&file_path),
-                    children: Box::new([]),
                     data_matrix,
+                    children: Box::new([]),
                 };
 
                 n.initalize_tree();
@@ -70,7 +70,7 @@ impl<'a> Nodule<'a> {
     fn initalize_tree(&mut self) {
         match self.node.data {
             yaml::YamlData::Mapping(_) => {}
-            _ => panic!("The content descendant nodes must by yaml mappings"),
+            _ => panic!("the content descendant nodes must be yaml mappings"),
         }
 
         let flag_node = &self.node.data["flag"];
@@ -102,7 +102,7 @@ impl<'a> Nodule<'a> {
                     .collect();
             } else {
                 panic!(
-                    "The value associated with the content keyword must be a sequence of mappings."
+                    "the value associated with the content keyword must be a sequence of mappings."
                 )
             }
         }
@@ -114,7 +114,7 @@ impl<'a> Nodule<'a> {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let data = match self.node.data {
             yaml::YamlData::Mapping(ref m) => m,
-            _ => self.panic("The content descendant nodes must be yaml mappings"),
+            _ => self.panic("the content descendant nodes must be yaml mappings"),
         };
 
         self.data_matrix = data_matrix.clone();
@@ -122,7 +122,7 @@ impl<'a> Nodule<'a> {
         for (key, value) in data.iter() {
             let key = match key.data {
                 yaml::YamlData::String(ref s) => s,
-                _ => self.panic("The keys of the mapping nodes must be strings."),
+                _ => self.panic("the keys of the mapping nodes must be strings"),
             };
             if key == "flag" || key == "content" {
                 continue;
@@ -132,15 +132,15 @@ impl<'a> Nodule<'a> {
                 yaml::YamlData::String(ref s) => vec![Box::from(s.to_owned())],
                 yaml::YamlData::List(ref a) => {
                     if a.len() == 0 {
-                        self.panic("When the values of the mapping nodes is a sequence, it must not be empty.")
+                        self.panic("when the values of the mapping nodes is a sequence, it must not be empty.")
                     }
                     a.iter().map(|v| match v.data {
                         yaml::YamlData::String(ref s) => Box::from(s.to_owned()),
-                        _ => self.panic("When the values of the mapping nodes is a sequence, it must be a sequence of strings only."),
+                        _ => self.panic("when the values of the mapping nodes is a sequence, it must be a sequence of strings only."),
                     }).collect()
                 }
                 _ => self.panic(&format!(
-                    "The values of mapping nodes must be strings or sequences. (key: {:?})",
+                    "the values of mapping nodes must be strings or sequences. (key: {:?})",
                     key
                 )),
             };
