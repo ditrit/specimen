@@ -6,6 +6,7 @@ __pycache__/
 
 !/.github/
 !/go/
+!/js/
 !/python/
 !/rust/
 !/test/

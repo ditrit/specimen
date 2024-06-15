@@ -102,7 +102,7 @@ impl<'a> Nodule<'a> {
                     .collect();
             } else {
                 panic!(
-                    "the value associated with the content keyword must be a sequence of mappings."
+                    "the value associated with the content keyword must be a sequence of mappings"
                 )
             }
         }
@@ -124,7 +124,7 @@ impl<'a> Nodule<'a> {
                 yaml::YamlData::String(ref s) => s,
                 _ => self.panic("the keys of the mapping nodes must be strings"),
             };
-            if key == "flag" || key == "content" {
+            if key == "flag" || key == "content" || key == "about" {
                 continue;
             }
 
@@ -227,14 +227,13 @@ impl Iterator for DataMatrixIterator {
         }
 
         for (k, key) in self.reversed_key_array.iter().enumerate() {
-            if self.index % self.size_array[k] == 0 {
-                self.index_array[k] += 1;
-                self.index_array[k] %= self.size_array[k];
-            } else {
-                // bump the identified index
-                self.index_array[k] += 1;
-                self.index_array[k] %= self.size_array[k];
+            let size = self.size_array[k];
+            let non_zero = self.index % size > 0;
+            // bump the index
+            self.index_array[k] += 1;
+            self.index_array[k] %= self.size_array[k];
 
+            if non_zero {
                 // update the combination entry corresponding to the identified key
                 self.combination.borrow_mut().insert(
                     key.clone(),

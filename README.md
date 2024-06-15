@@ -134,10 +134,9 @@ func AddAnimal(animal string) string {
 
 ```sh
 # golang
-go test ./test/counter ./test/danger ./test/novel ./test/nullValue ./test/zoo
+go test ./test/counter ./test/novel ./test/zoo
 # or
 go test test/counter/counter_test.go
-go test test/danger/danger_test.go
 go test test/novel/novel_test.go
 go test test/zoo/zoo_test.go
 
@@ -152,8 +151,7 @@ cd ..
 # js
 cd js
 yarn install
-# yarn parcel build src/index.ts
-yarn tsc
+yarn build
 cd ..
 node test/counter/counter_test.js
 node test/novel/novel_test.js

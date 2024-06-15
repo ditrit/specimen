@@ -89,7 +89,7 @@ func (n *Nodule) Populate(dataMatrix orderedstringmap.OSM) (err error) {
 
 	for k := 0; k < len(n.YamlNode.Content)/2; k += 1 {
 		key := n.YamlNode.Content[2*k]
-		if key.Value == "content" || key.Value == "about" {
+		if key.Value == "flag" || key.Value == "content" || key.Value == "about" {
 			continue
 		}
 		value := n.YamlNode.Content[2*k+1]
@@ -162,13 +162,12 @@ func (n *Nodule) NewResolveDataMatrixIterator() func() (Dict, int) {
 
 		// Go through the keys to find which one is affected by the index change
 		for k, key := range dataOrder {
-			if index%sizeSlice[k] == 0 {
-				indexSlice[k] += 1
-				indexSlice[k] %= sizeSlice[k]
-			} else {
-				// bump the identified index
-				indexSlice[k] += 1
-				indexSlice[k] %= sizeSlice[k]
+			size := sizeSlice[k]
+			nonZero := index%size > 0
+			// bump the index
+			indexSlice[k] += 1
+			indexSlice[k] %= size
+			if nonZero {
 				// update the combination entry corresponding to the identified key
 				combination[key] = n.DataMatrix.Get(key)[indexSlice[k]]
 				break
