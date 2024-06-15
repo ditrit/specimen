@@ -16,7 +16,7 @@ content:
     content:
       - name: manticore # this slab should be ignored as well since it is not focused
         animal: manticore
-        output: _never_
+        expected_result: _never_
       - name: zebra
         flag: FOCUS
         animal: zebra

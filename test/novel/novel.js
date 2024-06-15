@@ -1,4 +1,4 @@
-export class Book {
+exports.Book = class {
   constructor(prop) {
     this.title = prop.title;
     this.leftPage = prop.left_page;
@@ -18,4 +18,4 @@ export class Book {
   getPage() {
     return this.leftPage;
   }
-}
+};
