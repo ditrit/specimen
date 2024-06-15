@@ -23,14 +23,14 @@ class Nodule:
     def get_flag(self) -> focustree.Flag:
         return self.flag
 
-    def get_children(self):
+    def get_children(self) -> List["Nodule"]:
         return self.children
 
-    def get_value(self):
+    def get_value(self) -> "Nodule":
         return self
 
-    def warning(self, info: str) -> focustree:
-        print("Warning: %s %s(%s): %s" % (self.kind, self.name, self.location, info))
+    def warning(self, message: str):
+        print(f"Warning({self.get_location()}): {message}")
 
     @staticmethod
     def parse_file(file: File) -> "Nodule":
@@ -43,7 +43,7 @@ class Nodule:
             flag=focustree.Flag.NONE,
             be_leaf=True,
             file_path=file.path,
-            data_matrix=dict(file_path=file.path),
+            data_matrix=dict(file_path=[file.path]),
             children=[],
         )
 
@@ -55,6 +55,9 @@ class Nodule:
         return f"{self.file_path}:{self.node.start_mark.line+1}:{self.node.start_mark.column+1}"
 
     def initialize_tree(self):
+        if not syaml.is_mapping(self.node):
+            raise ValueError("the content descendant nodes must be yaml mappings")
+
         # flag
         self.flag = read_flag(self.node)
         if self.flag == focustree.Flag.SKIP:
@@ -71,16 +74,17 @@ class Nodule:
                         flag=focustree.Flag.NONE,
                         be_leaf=True,
                         file_path=self.file_path,
-                        children=[],
                         data_matrix=dict(),
+                        children=[],
                     )
                     nodule.initialize_tree()
                     self.children.append(nodule)
+            else:
+                raise ValueError(
+                    "the value associated with the content keyword must be a sequence of mappings"
+                )
 
-    def populate(self, data_matrix: Dict[str, str]):
-        if not syaml.is_mapping(self.node):
-            raise ValueError("the content descendant nodes must be yaml mappings")
-
+    def populate(self, data_matrix: Dict[str, List[str]]):
         if self.flag == focustree.Flag.SKIP:
             return
 
@@ -90,15 +94,19 @@ class Nodule:
             if not syaml.is_string(key):
                 raise ValueError("the keys of the mapping node must be strings")
 
-            if key.value == "flag" or key.value == "content":
+            if key.value in ["flag", "content", "about"]:
                 continue
 
             if not syaml.is_string(value) and not syaml.is_sequence(value):
                 raise ValueError(
-                    f"the values of mapping nodes must be strings or sequences (key: {key.value})"
+                    f"the values of mapping nodes must be strings or sequences of strings (key: {key.value})"
                 )
 
-            value_list = [value.value] if syaml.is_string(value) else value.value
+            value_list = (
+                [value.value]
+                if syaml.is_string(value)
+                else [v.value for v in value.value]
+            )
 
             self.data_matrix[key.value] = value_list
 
@@ -126,16 +134,19 @@ class Nodule:
         yield combination
         for index in range(1, total_combinations):
             for k, key in enumerate(reversed_key_array):
-                if index % size_array[k] == 0:
-                    index_array[k] += 1
-                    index_array[k] %= size_array[k]
-                else:
-                    # bump the identified index
-                    index_array[k] += 1
-                    index_array[k] %= size_array[k]
-
+                size = size_array[k]
+                non_zero = index % size > 0
+                print("k, key:", k, key)
+                print("index_array before", index_array)
+                # bump the index
+                index_array[k] += 1
+                index_array[k] %= size
+                print("index_array after_", index_array)
+                print("_size_array ______", size_array)
+                print("index_array non_zero", non_zero)
+                if non_zero:
                     # update the combination entry corresponding to the identified key
                     combination[key] = self.data_matrix[key][index_array[k]]
+                    yield combination
                     break
-            yield combination
         return

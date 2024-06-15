@@ -1,2 +1,2 @@
 from .map import *
-from .assertit import *
+from .check import *

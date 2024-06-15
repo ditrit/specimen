@@ -68,8 +68,7 @@ def flat_run(
 
     valid_tree = []
     for nodule in tree:
-        data_map = {}
-        data_map["filepath"] = nodule.file_path
+        data_map = dict(filepath=nodule.file_path)
         try:
             nodule.populate(data_map)
         except Exception as e:
@@ -145,7 +144,7 @@ def flat_run(
         outcome = "FAILURE"
     print(
         (
-            "Ran {} slabs in {}\n"
+            "Ran {} tiles in {}\n"
             "{} -- {} Passed | {} Failed | {} Aborted | {} Raised"
         ).format(
             s.tile_count,

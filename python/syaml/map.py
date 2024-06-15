@@ -1,5 +1,5 @@
 import yaml
-from .assertit import *
+from .check import *
 
 
 def map_try_get_value(node: yaml.Node, key: str) -> yaml.Node:

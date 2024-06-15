@@ -139,17 +139,15 @@ go test ./test/counter ./test/danger ./test/novel ./test/nullValue ./test/zoo
 go test test/counter/counter_test.go
 go test test/danger/danger_test.go
 go test test/novel/novel_test.go
-go test test/nullValue/nullValue_test.go
 go test test/zoo/zoo_test.go
 
 # python (v3.10 or a future version)
 cd python
 python -m poetry install
 cd ..
-python test/counter/counter_test.py
-python test/novel/novel_test.py
-python test/novel/nullValue_test.py
-python test/zoo/zoo_test.py
+(cd test/counter && python counter_test.py)
+(cd test/novel && python novel_test.py)
+(cd test/zoo && python zoo_test.py)
 
 # js
 cd js
@@ -159,7 +157,6 @@ yarn tsc
 cd ..
 node test/counter/counter_test.js
 node test/novel/novel_test.js
-node test/novel/nullValue_test.js
 node test/zoo/zoo_test.js
 ```
 
