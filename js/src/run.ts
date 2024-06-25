@@ -53,7 +53,14 @@ export function run(
 ) {
     let context: SpecimenContext = new SpecimenContext()
 
-    let tree = dataFileArray.map((file) => parseFileIntoNodule(file))
+    let tree: Nodule[] = []
+    dataFileArray.forEach((file) => {
+        try {
+            tree.push(parseFileIntoNodule(file))
+        } catch (e) {
+            console.error(`${file.path}: ${e}`)
+        }
+    })
 
     let validTree = tree.filter((nodule) => {
         let data_map = { filepath: [nodule.filePath] }

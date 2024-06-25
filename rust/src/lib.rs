@@ -49,7 +49,7 @@ pub fn run(test_box: &mut dyn FnMut(&Dict) -> Result<(), Box<str>>, file_slice: 
     for nodule in root_nodule_vec.iter_mut() {
         let mut data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>> = LinkedHashMap::new();
         data_matrix.insert(
-            Box::from("file_path"),
+            Box::from("filepath"),
             Rc::new([Box::from((*nodule.file_path).to_owned())]),
         );
 

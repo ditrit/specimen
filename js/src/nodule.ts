@@ -10,7 +10,7 @@ export function parseFileIntoNodule(file: File): Nodule {
     let document = yaml.parseDocument(file.content, { lineCounter })
     let mapping = document.contents
     if (!yaml.isMap(mapping)) {
-        throw new Error("the root of hte YAML test data file must be a mapping")
+        throw new Error("the root of the YAML test data file must be a mapping")
     }
 
     let nodule = new Nodule(

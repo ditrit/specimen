@@ -39,7 +39,7 @@ func NewNoduleFromFile(file File) (n Nodule, err error) {
 		return
 	}
 
-	n.InitializeTree()
+	err = n.InitializeTree()
 
 	return
 }

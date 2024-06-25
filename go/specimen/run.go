@@ -24,7 +24,7 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 	for _, file := range fileSlice {
 		nodule, err := NewNoduleFromFile(file)
 		if err != nil {
-			log.Println(err.Error())
+			log.Printf("%s: %s", file.Path, err.Error())
 		} else {
 			noduleRoot = append(noduleRoot, nodule)
 		}

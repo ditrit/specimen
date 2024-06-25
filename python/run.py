@@ -64,7 +64,12 @@ def flat_run(
 
     print(test_function.__name__)
 
-    tree = [Nodule.parse_file(file) for file in data_file_list]
+    tree = []
+    for file in data_file_list:
+        try:
+            tree.append(Nodule.parse_file(file))
+        except Exception as e:
+            print(f"{file.path}: {e}")
 
     valid_tree = []
     for nodule in tree:

@@ -22,8 +22,13 @@ impl<'a> Nodule<'a> {
     pub fn parse_file(file: &file::File, store: &'a mut Box<Vec<yaml::Yaml>>) -> Vec<Nodule<'a>> {
         let file_path = Rc::from(file.path.to_owned());
 
-        let mut document_vec = yaml::YamlLoader::load_from_str(&file.content)
-            .expect(&format!("failed to parse YAML from file {}.", &file.path));
+        let mut document_vec = match yaml::YamlLoader::load_from_str(&file.content) {
+            Ok(v) => v,
+            Err(e) => {
+                println!("{}: {}", file.path, e);
+                vec![]
+            }
+        };
 
         std::mem::swap(&mut document_vec, store);
 
