@@ -1,9 +1,6 @@
-use linked_hash_map::LinkedHashMap;
-
 use crate::file;
 use crate::flag;
-use crate::Dict;
-use std::cell::RefCell;
+use multistringmap::MultiStringMap;
 use std::rc::Rc;
 use yaml;
 
@@ -13,7 +10,7 @@ pub struct Nodule<'a> {
     pub flag: focustree::Flag,
     pub is_leaf: bool,
     pub file_path: Rc<str>,
-    pub data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>>,
+    pub data_matrix: MultiStringMap,
     pub children: Box<[Nodule<'a>]>,
 }
 
@@ -40,8 +37,8 @@ impl<'a> Nodule<'a> {
                     _ => panic!("The root node of the YAML test data file must be a mapping."),
                 }
 
-                let mut data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>> = LinkedHashMap::new();
-                data_matrix.insert(
+                let mut data_matrix = MultiStringMap::new();
+                data_matrix.0.insert(
                     Box::from("file_path"),
                     Rc::new([Box::from(file.path.clone())]),
                 );
@@ -99,7 +96,7 @@ impl<'a> Nodule<'a> {
                             is_leaf: true,
                             file_path: Rc::clone(&self.file_path),
                             children: Box::new([]),
-                            data_matrix: LinkedHashMap::new(),
+                            data_matrix: MultiStringMap::new(),
                         };
                         n.initalize_tree();
                         n
@@ -115,7 +112,7 @@ impl<'a> Nodule<'a> {
 
     pub fn populate(
         &mut self,
-        data_matrix: &LinkedHashMap<Box<str>, Rc<[Box<str>]>>,
+        data_matrix: &MultiStringMap,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let data = match self.node.data {
             yaml::YamlData::Mapping(ref m) => m,
@@ -151,6 +148,7 @@ impl<'a> Nodule<'a> {
             };
 
             self.data_matrix
+                .0
                 .insert(key.to_owned().into_boxed_str(), Rc::from(value_vector));
         }
 
@@ -161,94 +159,10 @@ impl<'a> Nodule<'a> {
         Ok(())
     }
 
-    pub fn into_resolved_data_matrix_iterator(self) -> DataMatrixIterator {
-        let length = self.data_matrix.len();
-
-        let reversed_key_array = self
-            .data_matrix
-            .keys()
-            .rev()
-            .map(|s| s.to_owned())
-            .collect::<Box<[Box<str>]>>();
-
-        let mut total_combinations = 1;
-        let mut size_array = Vec::with_capacity(length);
-        for key in reversed_key_array.iter() {
-            let size = self.data_matrix[key].len();
-            total_combinations *= size;
-            size_array.push(total_combinations);
-        }
-
-        let index_array = vec![0; length].into_boxed_slice();
-
-        let combination = RefCell::new(Dict::new());
-
-        // Initialize the combination
-        for key in reversed_key_array.iter() {
-            combination
-                .borrow_mut()
-                .insert((*key).clone(), self.data_matrix[key][0].clone());
-        }
-
-        DataMatrixIterator {
-            data_matrix: self.data_matrix,
-            reversed_key_array: reversed_key_array,
-            total_combinations,
-            size_array: size_array.into_boxed_slice(),
-            index_array,
-            combination,
-            index: 0,
-        }
-    }
-
     fn panic(&self, message: &str) -> ! {
         panic!(
             "{} ({}:{} with data: {:?})",
             message, self.file_path, self.node.position, self.node.data
         )
-    }
-}
-
-pub struct DataMatrixIterator {
-    data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>>,
-    reversed_key_array: Box<[Box<str>]>,
-    total_combinations: usize,
-    size_array: Box<[usize]>,
-    /// The index_array tracks the progress of values through every set
-    index_array: Box<[usize]>,
-    combination: RefCell<Dict>,
-    index: usize,
-}
-
-impl Iterator for DataMatrixIterator {
-    type Item = Dict;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.index == 0 {
-            self.index += 1;
-            return Some(self.combination.borrow().clone());
-        } else if self.index >= self.total_combinations {
-            return None;
-        }
-
-        for (k, key) in self.reversed_key_array.iter().enumerate() {
-            let size = self.size_array[k];
-            let non_zero = self.index % size > 0;
-            // bump the index
-            self.index_array[k] += 1;
-            self.index_array[k] %= self.size_array[k];
-
-            if non_zero {
-                // update the combination entry corresponding to the identified key
-                self.combination.borrow_mut().insert(
-                    key.clone(),
-                    self.data_matrix[key][self.index_array[k]].clone(),
-                );
-                break;
-            }
-        }
-
-        self.index += 1;
-        Some(self.combination.borrow().clone())
     }
 }

@@ -7,11 +7,14 @@ edition = "2021"
 
 [dependencies]
 focustree = { path = "./focustree" }
+writable = { path = "./writable" }
 yaml = { path = "./yaml" }
-linked-hash-map = "0.5.6"
+multistringmap = { path = "./multistringmap" }
 
 [dev-dependencies]
+regex = "1.10.5"
 serde = { version = "1.0.203", features = ["derive"] }
 serde_yaml = "0.9.34"
+yaml-rust = "0.4.5"
 
 [lib]

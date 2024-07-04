@@ -42,7 +42,7 @@ impl Zoo {
 fn test_focus_zoo() {
     let mut zoo = Zoo(Vec::new());
 
-    specimen::run(
+    let test_passed = specimen::run(
         &mut |tile: &specimen::Dict| -> Result<(), Box<str>> {
             let result = if tile.get("box").is_none() {
                 format!("Encountered tile without a box entry: {:?}", tile);
@@ -63,5 +63,7 @@ fn test_focus_zoo() {
         &[specimen::file::File::read_local_file(
             "../test/zoo/zoo_data.yaml",
         )],
-    )
+    );
+
+    assert!(test_passed);
 }

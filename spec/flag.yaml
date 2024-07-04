@@ -1,0 +1,56 @@
+content:
+  - box: call-logger
+    content:
+      - name: When a node is focused, other nodes are ignored
+        spec: |
+          content:
+            - flag: FOCUS
+            - {}
+            - {}
+        calls: |
+          - {}
+      - name: When a node is pending, it is ignored
+        spec: |
+          flag: PENDING
+        calls: "[]"
+  - box: report
+    content:
+      - name: When focused nodes are nested, only the innermost nodes are counted in the report
+        spec: |
+          flag: FOCUS
+          content:
+            - flag: FOCUS
+              letter: a
+            - flag: FOCUS
+              letter: b
+        behavior: |
+          a: pass
+          b: pass
+        report: |
+          Warning\([^:()]*:1:4\): [^\n]*
+          Encountered 2 focused node\(s\)
+          Ran 2 tiles in \d+(\.\d+)?ms
+          SUCCESS -- 2 Passed \| 0 Failed \| 0 Aborted \| 0 \w+
+      - name: When there are focused nodes, only the inner PENDING nodes are counted in the report
+        spec: |
+          flag: FOCUS
+          content:
+            - flag: FOCUS
+              letter: a
+              content:
+                - {}
+                - letter: b
+                - flag: PENDING
+                  letter: c
+            - flag: PENDING
+              letter: d
+        behavior: |
+          a: pass
+          b: pass
+          c: pass
+          d: pass
+        report: |
+          Warning\([^:()]*:1:4\): [^\n]*
+          Encountered 1 focused node\(s\) and 1 pending node\(s\)
+          Ran 2 tiles in \d+(\.\d+)?ms
+          SUCCESS -- 2 Passed \| 0 Failed \| 0 Aborted \| 0 \w+

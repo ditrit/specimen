@@ -1,0 +1,22 @@
+box: call-logger
+spec:
+  - |
+    about: {}
+  - |
+    about: [[]]
+  - |
+    about:
+      key: value
+  - |
+    about: null
+  - |
+    about: false
+  - |
+    about: true
+  - |
+    about:
+      - first
+      - second: third
+      - [fourth, fifth]
+calls: |
+  - {}

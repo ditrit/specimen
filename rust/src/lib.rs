@@ -3,12 +3,15 @@ mod flag;
 mod nodule;
 mod tree;
 
-use std::collections::HashMap;
+pub use multistringmap::Dict;
+use multistringmap::MultiStringMap;
+pub use writable::Writable;
+
+use std::io;
+use std::io::Write;
 use std::rc::Rc;
 use std::time::Duration;
 use std::time::SystemTime;
-
-use linked_hash_map::LinkedHashMap;
 
 #[derive(Default, PartialEq, Eq)]
 pub enum FailStatus {
@@ -32,9 +35,25 @@ struct S {
     fail_info: Box<str>,
 }
 
-pub type Dict = HashMap<Box<str>, Box<str>>;
+pub fn run(
+    test_box: &mut dyn FnMut(&Dict) -> Result<(), Box<str>>,
+    file_slice: &[file::File],
+) -> bool {
+    let result = ioless_run(test_box, file_slice, &mut Writable::Out(io::stdout()));
+    match result {
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            false
+        }
+        Ok(b) => b,
+    }
+}
 
-pub fn run(test_box: &mut dyn FnMut(&Dict) -> Result<(), Box<str>>, file_slice: &[file::File]) {
+pub fn ioless_run(
+    test_box: &mut dyn FnMut(&Dict) -> Result<(), Box<str>>,
+    file_slice: &[file::File],
+    stdout: &mut Writable,
+) -> io::Result<bool> {
     // Parse the data into a Root, which contains Nodule-s
 
     let mut document_store = Vec::from_iter(file_slice.iter().map(|_| Box::new(Vec::new())));
@@ -47,8 +66,8 @@ pub fn run(test_box: &mut dyn FnMut(&Dict) -> Result<(), Box<str>>, file_slice: 
         .collect();
 
     for nodule in root_nodule_vec.iter_mut() {
-        let mut data_matrix: LinkedHashMap<Box<str>, Rc<[Box<str>]>> = LinkedHashMap::new();
-        data_matrix.insert(
+        let mut data_matrix = MultiStringMap::new();
+        data_matrix.0.insert(
             Box::from("filepath"),
             Rc::new([Box::from((*nodule.file_path).to_owned())]),
         );
@@ -66,22 +85,25 @@ pub fn run(test_box: &mut dyn FnMut(&Dict) -> Result<(), Box<str>>, file_slice: 
         flag: focustree::Flag::None,
         is_leaf: false,
         file_path: Rc::from("".to_owned()),
-        data_matrix: LinkedHashMap::new(),
+        data_matrix: MultiStringMap::new(),
         children: root_nodule_vec.into_boxed_slice(),
     };
 
     // Retrieving focused nodes, if any. This is done using a suffix tree-traversal: The presence of the FOCUS flag on a node is checked after all its children havec been checked. If a node which has FOCUS-ed children is FOCUS-ed itself, then its FOCUS flag is ignored and a warning is issued.
     let mut selected_leaves = Vec::new();
-    focustree::extract_focused_leaf_values(&root, &mut selected_leaves);
+    let mut flag_stat = focustree::FlagStat::default();
+    focustree::extract_focused_leaf_values(&root, &mut selected_leaves, &mut flag_stat, stdout);
 
-    let start_time = std::time::SystemTime::now();
+    let start_time = SystemTime::now();
 
     // Run all the selected leaves
     let mut s = S::default();
     for slab in selected_leaves.into_iter() {
         let slab_location = slab.get_location();
 
-        for (index, tile) in slab.into_resolved_data_matrix_iterator().enumerate() {
+        let mut index = 0;
+        let mut iterator = slab.data_matrix.into_product_iterator();
+        while let Some(tile) = iterator.next() {
             // Pass the slab data to the testbox
             // - Manage the context (s, test start and test end)
             // - Recover from any panic that might arise during the testbox call
@@ -128,10 +150,12 @@ pub fn run(test_box: &mut dyn FnMut(&Dict) -> Result<(), Box<str>>, file_slice: 
                     FailStatus::Panicked => "PANIC",
                     _ => "",
                 };
-                let message = format!("{word}[slab: {slab_location}][{index}]: {}", s.fail_info);
+                let message = format!("{word}[{slab_location}][{index}]: {}", s.fail_info);
 
                 s.failure_report.push(Box::from(message));
             }
+
+            index += 1;
         }
     }
 
@@ -142,19 +166,33 @@ pub fn run(test_box: &mut dyn FnMut(&Dict) -> Result<(), Box<str>>, file_slice: 
     let outcome = if s.failure_report.len() == 0 {
         "SUCCESS"
     } else {
-        eprintln!("{}", s.failure_report.join("\n"));
+        writeln!(stdout, "{}", s.failure_report.join("\n"))?;
         "FAILURE"
     };
 
-    eprintln!(
-        "Ran {} tiles in {}\n \
+    if flag_stat.focus_count > 0 || flag_stat.skip_count > 0 {
+        let mut message_vec = vec![];
+        if flag_stat.focus_count > 0 {
+            message_vec.push(format!("{} focused node(s)", flag_stat.focus_count));
+        }
+        if flag_stat.skip_count > 0 {
+            message_vec.push(format!("{} pending node(s)", flag_stat.skip_count));
+        }
+        writeln!(stdout, "Encountered {}", message_vec.join(" and "))?;
+    }
+
+    writeln!(
+        stdout,
+        "Ran {} tiles in {}ms\n\
         {} -- {} Passed | {} Failed | {} Aborted | {} Panicked",
         s.tile_count,
-        duration.as_secs(),
+        duration.as_millis(),
         outcome,
         s.tile_passed,
         s.tile_failed,
         s.tile_aborted,
         s.tile_panicked,
-    )
+    )?;
+
+    Ok(outcome == "SUCCESS")
 }

@@ -1,4 +1,6 @@
 use crate::nodule::Nodule;
+use std::io::Write;
+use writable::Writable;
 
 // This file implements the focustree::Tree trait for the Nodule struct and the NoduleRoot type.
 
@@ -22,7 +24,10 @@ impl<'a> focustree::Tree<Nodule<'a>> for Nodule<'a> {
         (*self).clone()
     }
 
-    fn warning(&self, message: &str) {
-        println!("Warning({}): {}", self.get_location(), message);
+    fn warning(&self, message: &str, stdout: &mut Writable) {
+        let res = write!(stdout, "Warning({}): {}\n", self.get_location(), message);
+        if let Err(e) = res {
+            panic!("Error: {}", e);
+        }
     }
 }

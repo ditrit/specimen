@@ -2,7 +2,7 @@
 fn test_counter() {
     let mut counter = 0;
 
-    specimen::run(
+    let test_passed = specimen::run(
         &mut |tile: &specimen::Dict| -> Result<(), Box<str>> {
             match tile.get("expected_count") {
                 Some(expected_count) => {
@@ -21,5 +21,7 @@ fn test_counter() {
         &[specimen::file::File::read_local_file(
             "../test/counter/counter_data.yaml",
         )],
-    )
+    );
+
+    assert!(test_passed);
 }

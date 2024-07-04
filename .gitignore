@@ -9,4 +9,5 @@ __pycache__/
 !/js/
 !/python/
 !/rust/
+!/spec/
 !/test/

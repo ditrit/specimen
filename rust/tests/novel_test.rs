@@ -62,7 +62,7 @@ fn get_page(input: &specimen::Dict) -> Result<(), Box<str>> {
 
 #[test]
 fn test_novel() {
-    specimen::run(
+    let test_passed = specimen::run(
         &mut |tile: &specimen::Dict| -> Result<(), Box<str>> {
             match &*tile["box"] {
                 "get_page" => get_page(tile),
@@ -74,5 +74,7 @@ fn test_novel() {
         &[specimen::file::File::read_local_file(
             "../test/novel/novel_data.yaml",
         )],
-    )
+    );
+
+    assert!(test_passed);
 }

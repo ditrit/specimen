@@ -1,0 +1,31 @@
+box: call-logger
+content:
+  - name: the simple input order is preserved
+    spec: |
+      letter: [a, b]
+    calls: |
+      - letter: a
+      - letter: b
+  - name: the latest entries move the fastest
+    spec:
+      - |
+        letter: [a, b]
+        count: ["10", "20"]
+      - |
+        letter: [a, b]
+        content:
+          - count: ["10", "20"]
+      - |
+        letter: [a, b]
+        content:
+          - content:
+              - count: ["10", "20"]
+    calls: |
+      - letter: a
+        count: "10"
+      - letter: a
+        count: "20"
+      - letter: b
+        count: "10"
+      - letter: b
+        count: "20"

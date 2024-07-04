@@ -1,0 +1,11 @@
+[package]
+name = "multistringmap"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "multistringmap"
+path = "multistringmap.rs"
+
+[dependencies]
+linked-hash-map = "0.5.6"

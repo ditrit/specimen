@@ -2,12 +2,20 @@
 //! from the leaves of the tree, while supporting the option for the tree
 //! to skip or focus certain branches.
 
+use writable::Writable;
+
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Flag {
     #[default]
     None,
     Skip,
     Focus,
+}
+
+#[derive(Debug, Default)]
+pub struct FlagStat {
+    pub focus_count: usize,
+    pub skip_count: usize,
 }
 
 pub trait Tree<TValue> {
@@ -21,20 +29,26 @@ pub trait Tree<TValue> {
     fn get_value(&self) -> TValue;
     /// a function that is called when some unexpected situation occurs
     /// during the traversal of the current node.
-    fn warning(&self, message: &str);
+    fn warning(&self, message: &str, stdout: &mut Writable);
 }
 
 // This function calls find_focused_nodes. If no node is focused, it
 // considers that the root of the tree is focused. It then calls
 // extract_leaf_value on all the focused nodes, filling the destination vec.
-pub fn extract_focused_leaf_values<TValue>(tree: &dyn Tree<TValue>, destination: &mut Vec<TValue>) {
+pub fn extract_focused_leaf_values<TValue>(
+    tree: &dyn Tree<TValue>,
+    destination: &mut Vec<TValue>,
+    flag_stat: &mut FlagStat,
+    stdout: &mut Writable,
+) {
     let mut focused_node_vec = Vec::new();
-    extract_focused_nodes(tree, &mut focused_node_vec);
+    extract_focused_nodes(tree, &mut focused_node_vec, stdout);
+    flag_stat.focus_count = focused_node_vec.len();
     if focused_node_vec.is_empty() {
         focused_node_vec.push(tree);
     }
     for focused_node in focused_node_vec {
-        get_leaf_values(focused_node, destination);
+        get_leaf_values(focused_node, destination, flag_stat);
     }
 }
 
@@ -44,13 +58,14 @@ pub fn extract_focused_leaf_values<TValue>(tree: &dyn Tree<TValue>, destination:
 fn extract_focused_nodes<'vec, 'node: 'vec, TValue>(
     tree: &'node dyn Tree<TValue>,
     focused_node_vec: &'vec mut Vec<&'node dyn Tree<TValue>>,
+    stdout: &mut Writable,
 ) {
     if tree.get_flag() == Flag::Skip {
         return;
     }
     let initial_length = focused_node_vec.len();
     for child in tree.get_children() {
-        extract_focused_nodes(child, focused_node_vec);
+        extract_focused_nodes(child, focused_node_vec, stdout);
     }
     if tree.get_flag() == Flag::Focus {
         if focused_node_vec.len() <= initial_length {
@@ -60,6 +75,7 @@ fn extract_focused_nodes<'vec, 'node: 'vec, TValue>(
                 "A node with focused descendants is itself focused. \
                 It has been considered not focused in favor of its \
                 focused descendants",
+                stdout,
             );
         }
     }
@@ -67,15 +83,20 @@ fn extract_focused_nodes<'vec, 'node: 'vec, TValue>(
 
 /// This function produces the synthesis of the values of the leaves of
 /// the node it receives.
-fn get_leaf_values<TValue>(tree: &dyn Tree<TValue>, value_vec: &mut Vec<TValue>) {
+fn get_leaf_values<TValue>(
+    tree: &dyn Tree<TValue>,
+    value_vec: &mut Vec<TValue>,
+    flag_stat: &mut FlagStat,
+) {
     if tree.get_flag() == Flag::Skip {
+        flag_stat.skip_count += 1;
         return;
     }
     if tree.is_leaf() {
         value_vec.push(tree.get_value());
     }
     for child in tree.get_children() {
-        get_leaf_values(child, value_vec);
+        get_leaf_values(child, value_vec, flag_stat);
     }
 }
 
@@ -180,7 +201,8 @@ mod tests {
         };
 
         let mut actual_result = Vec::new();
-        extract_focused_leaf_values(&tree, &mut actual_result);
+        let mut flag_stat = focustree::FlagStat::default();
+        extract_focused_leaf_values(&tree, &mut actual_result, flag_stat, stdout);
 
         assert_eq!(actual_result, vec![9, 10, 6]);
     }
