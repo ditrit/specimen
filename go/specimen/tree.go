@@ -1,7 +1,8 @@
 package specimen
 
 import (
-	"log"
+	"fmt"
+	"io"
 
 	"github.com/ditrit/specimen/go/specimen/focustree"
 )
@@ -25,8 +26,8 @@ func (NoduleRoot) GetFlag() focustree.FlagType {
 	return focustree.None
 }
 
-func (NoduleRoot) Warning(info string) {
-	log.Printf("Warning: NoduleRoot: %s\n", info)
+func (NoduleRoot) Warning(info string, stdout io.Writer) {
+	fmt.Fprintf(stdout, "Warning: NoduleRoot: %s\n", info)
 }
 
 // Nodule implements focustree.Node
@@ -47,6 +48,6 @@ func (n Nodule) GetFlag() focustree.FlagType {
 	return n.Flag
 }
 
-func (n Nodule) Warning(info string) {
-	log.Printf("Warning(%s): %s\n", n.GetLocation(), info)
+func (n Nodule) Warning(info string, stdout io.Writer) {
+	fmt.Fprintf(stdout, "Warning(%s): %s\n", n.GetLocation(), info)
 }

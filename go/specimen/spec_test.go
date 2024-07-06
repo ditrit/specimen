@@ -1,9 +1,8 @@
 package specimen_test
 
 import (
+	"bytes"
 	"fmt"
-	"io"
-	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -19,7 +18,7 @@ func indent(s string, n int) string {
 
 }
 
-func callLogger(s *specimen.S, tile specimen.Dict, finishCapturingStdout func() string) {
+func callLogger(s *specimen.S, tile specimen.Dict) {
 	var callYaml interface{}
 	err := yaml.Unmarshal([]byte(tile["calls"]), &callYaml)
 	if err != nil {
@@ -29,7 +28,8 @@ func callLogger(s *specimen.S, tile specimen.Dict, finishCapturingStdout func() 
 	callSlice := callYaml.([]interface{})
 	index := 0
 	var error error = nil
-	specimen.Run(
+
+	specimen.IolessRun(
 		&t,
 		func(ss *specimen.S, specTile specimen.Dict) {
 			if error == nil {
@@ -64,9 +64,8 @@ func callLogger(s *specimen.S, tile specimen.Dict, finishCapturingStdout func() 
 				Content: []byte(tile["spec"]),
 			},
 		},
+		&bytes.Buffer{},
 	)
-
-	finishCapturingStdout()
 
 	if error != nil {
 		s.Fail(error.Error())
@@ -79,7 +78,7 @@ func callLogger(s *specimen.S, tile specimen.Dict, finishCapturingStdout func() 
 	}
 }
 
-func report(s *specimen.S, tile specimen.Dict, finishCapturingStdout func() string) {
+func report(s *specimen.S, tile specimen.Dict) {
 	var behaviorYaml interface{}
 	err := yaml.Unmarshal([]byte(tile["behavior"]), &behaviorYaml)
 	if err != nil {
@@ -90,19 +89,21 @@ func report(s *specimen.S, tile specimen.Dict, finishCapturingStdout func() stri
 		behavior[k] = v.(string)
 	}
 
+	buffer := bytes.Buffer{}
+
 	t := testing.T{}
-	specimen.Run(
+	specimen.IolessRun(
 		&t,
 		func(ss *specimen.S, specTile specimen.Dict) {
 			outcome := behavior[specTile["letter"]]
 			switch outcome {
 			case "pass":
 			case "fail":
-				ss.Fail("This test is expected to fail")
+				ss.Fail("failure")
 			case "abort":
-				ss.Abort("This test is expected to abort")
+				ss.Abort("aborted")
 			default:
-				ss.Abort("Unknown outcome: " + outcome)
+				ss.Abort(fmt.Sprintf("unknown outcome: '%s', specTile: %s", outcome, specTile))
 			}
 		},
 		[]specimen.File{
@@ -111,9 +112,10 @@ func report(s *specimen.S, tile specimen.Dict, finishCapturingStdout func() stri
 				Content: []byte(tile["spec"]),
 			},
 		},
+		&buffer,
 	)
 
-	out := finishCapturingStdout()
+	out := buffer.String()
 
 	reportRegex := regexp.MustCompile(tile["report"])
 	if !reportRegex.MatchString(out) {
@@ -128,27 +130,13 @@ func TestSpec(t *testing.T) {
 	specimen.Run(
 		t,
 		func(s *specimen.S, tile specimen.Dict) {
-			// Capture stdout
-			rescueStdout := os.Stdout
-			r, w, _ := os.Pipe()
-			os.Stdout = w
-
-			finishCapturingStdout := func() string {
-				// Read captured stdout
-				w.Close()
-				out, err := io.ReadAll(r)
-				if err != nil {
-					panic(err)
-				}
-				os.Stdout = rescueStdout
-				return string(out)
-			}
-
 			switch tile["box"] {
 			case "call-logger":
-				callLogger(s, tile, finishCapturingStdout)
+				callLogger(s, tile)
 			case "report":
-				report(s, tile, finishCapturingStdout)
+				report(s, tile)
+			default:
+				s.Abort(fmt.Sprintf("unknown box: %s", tile["box"]))
 			}
 		},
 		[]specimen.File{

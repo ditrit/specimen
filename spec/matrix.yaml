@@ -6,6 +6,13 @@ content:
     calls: |
       - letter: a
       - letter: b
+  - name: the entries are copied down to the leaves
+    spec: |
+      letter: a
+      content:
+        - {}
+    calls: |
+      - letter: a
   - name: the latest entries move the fastest
     spec:
       - |

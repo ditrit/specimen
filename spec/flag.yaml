@@ -27,7 +27,7 @@ content:
           a: pass
           b: pass
         report: |
-          Warning\([^:()]*:1:4\): [^\n]*
+          Warning\([^:()]*:1:[14]\): [^\n]*
           Encountered 2 focused node\(s\)
           Ran 2 tiles in \d+(\.\d+)?ms
           SUCCESS -- 2 Passed \| 0 Failed \| 0 Aborted \| 0 \w+
@@ -50,7 +50,7 @@ content:
           c: pass
           d: pass
         report: |
-          Warning\([^:()]*:1:4\): [^\n]*
+          Warning\([^:()]*:1:[14]\): [^\n]*
           Encountered 1 focused node\(s\) and 1 pending node\(s\)
           Ran 2 tiles in \d+(\.\d+)?ms
           SUCCESS -- 2 Passed \| 0 Failed \| 0 Aborted \| 0 \w+

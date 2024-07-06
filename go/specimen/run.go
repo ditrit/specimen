@@ -2,7 +2,9 @@ package specimen
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"os"
 	"runtime/debug"
 	"strings"
 	"testing"
@@ -12,19 +14,20 @@ import (
 	"github.com/ditrit/specimen/go/specimen/orderedstringmap"
 )
 
-// Load the data of the given files and runs the code sandboxes with it
 func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
+	IolessRun(t, boxFunction, fileSlice, os.Stdout)
+}
+
+// Load the data of the given files and runs the code sandboxes with it
+func IolessRun(t *testing.T, boxFunction BoxFunction, fileSlice []File, stdout io.Writer) {
 	s := S{T: t}
-	log.Printf("%s:\n", s.T.Name())
-	// Todo: consider replacing all "log.Print(|f|ln)" by "s.t.Log(|f|ln)"
-	// (which would require passing s as parameter everywhere around)
 
 	// Parsing the data into a noduleRoot of Nodule-s, Nodule-s
 	var noduleRoot NoduleRoot
 	for _, file := range fileSlice {
 		nodule, err := NewNoduleFromFile(file)
 		if err != nil {
-			log.Printf("%s: %s", file.Path, err.Error())
+			fmt.Fprintf(stdout, "%s: %s", file.Path, err.Error())
 		} else {
 			noduleRoot = append(noduleRoot, nodule)
 		}
@@ -50,7 +53,7 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 	// children is FOCUS-ed too, its FOCUS-ed flag is ignored and a warning is
 	// issued.
 	flagStat := focustree.FlagStat{}
-	selectedLeaves := focustree.ExtractSelectedLeaves(validTree, &flagStat)
+	selectedLeaves := focustree.ExtractSelectedLeaves(validTree, &flagStat, stdout)
 
 	startTime := time.Now()
 
@@ -61,9 +64,10 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 		// - Manage the context (s, test start and test end)
 		// - Recover from any panic that might arise during the testbox call
 
-		iterator := slab.NewResolveDataMatrixIterator()
+		iterator := slab.DataMatrix.ProductIterator()
+		index := 0
 		for {
-			tile, index := iterator()
+			tile := iterator()
 			if tile == nil {
 				break
 			}
@@ -100,10 +104,12 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 					word = "PANIC"
 				}
 
-				message := fmt.Sprintf("%s[slab: %s][%d]: %s", word, slab.GetLocation(), index, info)
+				message := fmt.Sprintf("%s[%s][%d]: %s", word, slab.GetLocation(), index, info)
 
 				s.failureReport = append(s.failureReport, message)
 			}
+
+			index += 1
 		}
 	}
 
@@ -113,7 +119,7 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 	var outcome = "SUCCESS"
 	if len(s.failureReport) > 0 {
 		s.T.Fail()
-		log.Println(strings.Join(s.failureReport, "\n"))
+		fmt.Fprintln(stdout, strings.Join(s.failureReport, "\n"))
 		outcome = "FAILURE"
 	}
 	// Reporting flag stats
@@ -125,12 +131,13 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 		if flagStat.SkipCount > 0 {
 			messageSlice = append(messageSlice, fmt.Sprintf("%d pending node(s)", flagStat.SkipCount))
 		}
-		log.Printf("Encountered %s\n", strings.Join(messageSlice, " and "))
+		fmt.Fprintf(stdout, "Encountered %s\n", strings.Join(messageSlice, " and "))
 	}
-	log.Printf(
-		"Ran %d tiles in %v\n"+
-			"%s -- %d Passed | %d Failed | %d Aborted | %d Panicked",
-		s.tileCount, duration,
+	fmt.Fprintf(
+		stdout,
+		"Ran %d tiles in %vms\n"+
+			"%s -- %d Passed | %d Failed | %d Aborted | %d Panicked\n",
+		s.tileCount, duration.Milliseconds(),
 		outcome, s.tilePassed, s.tileFailed, s.tileAborted, s.tilePanicked,
 	)
 }

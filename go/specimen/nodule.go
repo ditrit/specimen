@@ -77,11 +77,6 @@ func (n *Nodule) InitializeTree() (err error) {
 
 // Populate fills the DataMatrix with the Yaml data
 func (n *Nodule) Populate(dataMatrix orderedstringmap.OSM) (err error) {
-	// Todo: improve the performance by detecting all the cases where creating a copy of the dataMatrix is unneccessary
-	if len(n.YamlNode.Content) == 0 {
-		return nil
-	}
-
 	// Cloning dataMatrix
 	n.DataMatrix = dataMatrix.Clone()
 
@@ -114,64 +109,4 @@ func (n *Nodule) Populate(dataMatrix orderedstringmap.OSM) (err error) {
 	err = errors.Join(errorSlice...)
 
 	return
-}
-
-func (n *Nodule) NewResolveDataMatrixIterator() func() (Dict, int) {
-	// reverse the dataOrder so that we iterate quickly on the latest keys, and
-	// more slowly in the earlier keys
-	length := n.DataMatrix.Len()
-	dataOrder := make([]string, length)
-	for k, key := range n.DataMatrix.Keys() {
-		dataOrder[length-1-k] = key
-	}
-
-	// Calculate the total number of combinations and the intermediate slice
-	// sizes
-	totalCombinations := 1
-	sizeSlice := make([]int, 0, len(dataOrder))
-	for _, key := range dataOrder {
-		set := n.DataMatrix.Get(key)
-		totalCombinations *= len(set)
-		sizeSlice = append(sizeSlice, totalCombinations)
-	}
-
-	// The indexSlice traks the progress of values through every set
-	indexSlice := make([]int, len(dataOrder))
-
-	// The combination is the variable that will be updated and returned by the
-	// iterator
-	combination := Dict{}
-	// Initialize the combination
-	for k, key := range dataOrder {
-		combination[key] = n.DataMatrix.Get(key)[indexSlice[k]]
-		// ^ Note that in this loop, indexSlice[k] is actually always 0
-	}
-
-	// Create a closure-based iterator function
-	index := 0
-	return func() (Dict, int) {
-		if index == 0 {
-			index += 1
-			return combination, (index - 1)
-		} else if index == totalCombinations {
-			index += 1
-			return nil, (index - 1)
-		}
-
-		// Go through the keys to find which one is affected by the index change
-		for k, key := range dataOrder {
-			size := sizeSlice[k]
-			nonZero := index%size > 0
-			// bump the index
-			indexSlice[k] += 1
-			indexSlice[k] %= size
-			if nonZero {
-				// update the combination entry corresponding to the identified key
-				combination[key] = n.DataMatrix.Get(key)[indexSlice[k]]
-				break
-			}
-		}
-		index += 1
-		return combination, (index - 1)
-	}
 }

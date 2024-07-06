@@ -1,5 +1,7 @@
 package orderedstringmap
 
+import "slices"
+
 type OSM struct {
 	mapping map[string][]string
 	order   []string
@@ -77,4 +79,46 @@ func (o *OSM) Entries() (result []Entry) {
 		result = append(result, Entry{Key: key, Value: o.mapping[key]})
 	}
 	return
+}
+
+func (o *OSM) ProductIterator() func() map[string]string {
+	reversedKeySlice := make([]string, len(o.order))
+	copy(reversedKeySlice, o.order)
+	slices.Reverse(reversedKeySlice)
+	reversedSizeSlice := make([]int, len(o.order))
+	for i, key := range reversedKeySlice {
+		reversedSizeSlice[i] = len(o.mapping[key])
+	}
+	reversedIndexSlice := make([]int, len(o.order))
+
+	combination := map[string]string{}
+	for _, key := range reversedKeySlice {
+		combination[key] = o.mapping[key][0]
+	}
+
+	stopped := false
+	first := true
+
+	return func() map[string]string {
+		if stopped {
+			return nil
+		}
+		if first {
+			first = false
+			return combination
+		}
+		n := -1
+		for n < 0 || reversedIndexSlice[n] == 0 {
+			n += 1
+			if n >= len(reversedIndexSlice) {
+				stopped = true
+				return nil
+			}
+			reversedIndexSlice[n] += 1
+			reversedIndexSlice[n] %= reversedSizeSlice[n]
+			combination[reversedKeySlice[n]] = o.mapping[reversedKeySlice[n]][reversedIndexSlice[n]]
+		}
+
+		return combination
+	}
 }

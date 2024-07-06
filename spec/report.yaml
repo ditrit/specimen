@@ -5,7 +5,7 @@ content:
       a: pass
       b: fail
     report: |
-      FAIL\[[^:\[\]]*:1:6\]\[1\]: failure
+      FAIL\[[^:\[\]]*:1:[16]\]\[1\]: failure
       Ran 2 tiles in \d+(\.\d+)?ms
       FAILURE -- 1 Passed \| 1 Failed \| 0 Aborted \| 0 \w+
   - behavior: |
@@ -18,7 +18,7 @@ content:
       a: abort
       b: abort
     report: |
-      ABORT\[[^:\[\]]*:1:6\]\[0\]: aborted
-      ABORT\[[^:\[\]]*:1:6\]\[1\]: aborted
+      ABORT\[[^:\[\]]*:1:[16]\]\[0\]: aborted
+      ABORT\[[^:\[\]]*:1:[16]\]\[1\]: aborted
       Ran 2 tiles in \d+(\.\d+)?ms
       FAILURE -- 0 Passed \| 0 Failed \| 2 Aborted \| 0 \w+

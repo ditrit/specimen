@@ -57,24 +57,19 @@ impl MultiStringMapProductIterator {
             self.first = false;
             return Some(&self.combination);
         }
-        let mut n = 0;
-        self.reversed_index_array[n] += 1;
-        self.reversed_index_array[n] %= self.reversed_size_array[n];
-        self.combination.insert(
-            self.reversed_key_array[n].clone(),
-            self.map.0[&self.reversed_key_array[n]][self.reversed_index_array[n]].clone(),
-        );
-        while self.reversed_index_array[n] == 0 {
+        let mut n = -1i32;
+        while n < 0 || self.reversed_index_array[n as usize] == 0 {
             n += 1;
-            if n >= self.reversed_index_array.len() {
+            let m = n as usize;
+            if m >= self.reversed_index_array.len() {
                 self.stopped = true;
                 return None;
             }
-            self.reversed_index_array[n] += 1;
-            self.reversed_index_array[n] %= self.reversed_size_array[n];
+            self.reversed_index_array[m] += 1;
+            self.reversed_index_array[m] %= self.reversed_size_array[m];
             self.combination.insert(
-                self.reversed_key_array[n].clone(),
-                self.map.0[&self.reversed_key_array[n]][self.reversed_index_array[n]].clone(),
+                self.reversed_key_array[m].clone(),
+                self.map.0[&self.reversed_key_array[m]][self.reversed_index_array[m]].clone(),
             );
         }
 
