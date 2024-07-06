@@ -49,7 +49,8 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 	// after all its children have been checked. If a node which has FOCUS-ed
 	// children is FOCUS-ed too, its FOCUS-ed flag is ignored and a warning is
 	// issued.
-	selectedLeaves := focustree.ExtractSelectedLeaves(validTree)
+	flagStat := focustree.FlagStat{}
+	selectedLeaves := focustree.ExtractSelectedLeaves(validTree, &flagStat)
 
 	startTime := time.Now()
 
@@ -114,6 +115,17 @@ func Run(t *testing.T, boxFunction BoxFunction, fileSlice []File) {
 		s.T.Fail()
 		log.Println(strings.Join(s.failureReport, "\n"))
 		outcome = "FAILURE"
+	}
+	// Reporting flag stats
+	if flagStat.FocusCount > 0 || flagStat.SkipCount > 0 {
+		messageSlice := []string{}
+		if flagStat.FocusCount > 0 {
+			messageSlice = append(messageSlice, fmt.Sprintf("%d focused node(s)", flagStat.FocusCount))
+		}
+		if flagStat.SkipCount > 0 {
+			messageSlice = append(messageSlice, fmt.Sprintf("%d pending node(s)", flagStat.SkipCount))
+		}
+		log.Printf("Encountered %s\n", strings.Join(messageSlice, " and "))
 	}
 	log.Printf(
 		"Ran %d tiles in %v\n"+
