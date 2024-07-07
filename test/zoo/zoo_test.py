@@ -14,11 +14,11 @@ def zoofunction(context, animal=None, expected_result=None, **kwargs):
 
 def animalkind(context, name, horn, leg, **kwargs):
     if name == "deer":
-        context.test_case.assertEqual(horn, 2, "deer horns")
-        context.test_case.assertEqual(leg, 4, "deer legs")
+        context.test_case.assertEqual(horn, '2', "deer horns")
+        context.test_case.assertEqual(leg, '4', "deer legs")
     elif name == "earthpony":
-        context.test_case.assertEqual(horn, 0, "earthpony horn")
-        context.test_case.assertEqual(leg, 4, "earthpony legs")
+        context.test_case.assertEqual(horn, '0', "earthpony horn")
+        context.test_case.assertEqual(leg, '4', "earthpony legs")
     else:
         self.test_case.fail("unknown animal name: " + name)
 

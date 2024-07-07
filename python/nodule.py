@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Dict, List
+from typing import Any, Dict, List
 import yaml
 
 from python.file import File
@@ -29,8 +29,8 @@ class Nodule:
     def get_value(self) -> "Nodule":
         return self
 
-    def warning(self, message: str):
-        print(f"Warning({self.get_location()}): {message}")
+    def warning(self, message: str, stdout: Any):
+        print(f"Warning({self.get_location()}): {message}", file=stdout)
 
     @staticmethod
     def parse_file(file: File) -> "Nodule":
@@ -114,39 +114,20 @@ class Nodule:
             child.populate(self.data_matrix)
 
     def __iter__(self):
-        length = len(self.data_matrix)
+        reversed_key_list = [*reversed(self.data_matrix.keys())]
+        reversed_size_list = [len(self.data_matrix[key]) for key in reversed_key_list]
+        reversed_index_list = [0] * len(reversed_size_list)
 
-        reversed_key_array = [*self.data_matrix.keys()][::-1]
-        total_combinations = 1
-        size_array = []
-        for key in reversed_key_array:
-            size = len(self.data_matrix[key])
-            total_combinations *= size
-            size_array.append(total_combinations)
-
-        index_array = [0] * length
-
-        combination = dict()
-
-        for key in reversed_key_array:
-            combination[key] = self.data_matrix[key][0]
-
+        combination = { key: self.data_matrix[key][0] for key in reversed_key_list}
         yield combination
-        for index in range(1, total_combinations):
-            for k, key in enumerate(reversed_key_array):
-                size = size_array[k]
-                non_zero = index % size > 0
-                print("k, key:", k, key)
-                print("index_array before", index_array)
-                # bump the index
-                index_array[k] += 1
-                index_array[k] %= size
-                print("index_array after_", index_array)
-                print("_size_array ______", size_array)
-                print("index_array non_zero", non_zero)
-                if non_zero:
-                    # update the combination entry corresponding to the identified key
-                    combination[key] = self.data_matrix[key][index_array[k]]
-                    yield combination
-                    break
-        return
+
+        while True:
+            n = -1
+            while n < 0 or reversed_index_list[n] == 0:
+                n += 1
+                if n >= len(reversed_index_list):
+                    return
+                reversed_index_list[n] += 1
+                reversed_index_list[n] %= reversed_size_list[n]
+                combination[reversed_key_list[n]] = self.data_matrix[reversed_key_list[n]][reversed_index_list[n]]
+            yield combination

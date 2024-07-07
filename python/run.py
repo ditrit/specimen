@@ -1,7 +1,8 @@
 import enum
 from datetime import datetime
+import sys
 import traceback
-from typing import Callable, Dict
+from typing import Callable, Dict, Any
 import unittest
 
 import python.focustree as focustree
@@ -46,9 +47,12 @@ class SpecimenContext:
 
 
 def run(*data_file_list):
+    return ioless_run(*data_file_list, stdout=sys.stdout)
+
+def ioless_run(*data_file_list, stdout):
     class TestClass(unittest.TestCase):
         def run_function(self, testcase_function: type):
-            flat_run(self, testcase_function, data_file_list)
+            flat_run(self, testcase_function, data_file_list, stdout)
 
     test_instance = TestClass()
 
@@ -59,10 +63,9 @@ def flat_run(
     t: unittest.TestCase,
     test_function: Callable[[Dict[str, str]], None],
     data_file_list: list[File],
+    stdout: Any,
 ):
     s = SpecimenContext(t)
-
-    print(test_function.__name__)
 
     tree = []
     for file in data_file_list:
@@ -73,7 +76,7 @@ def flat_run(
 
     valid_tree = []
     for nodule in tree:
-        data_map = dict(filepath=nodule.file_path)
+        data_map = dict(filepath=[nodule.file_path])
         try:
             nodule.populate(data_map)
         except Exception as e:
@@ -89,7 +92,8 @@ def flat_run(
         data_matrix=dict(),
         children=valid_tree,
     )
-    selected_leaves = focustree.extract_selected_leaves(nodule_tree)
+    flag_stat = focustree.FlagStat(0, 0)
+    selected_leaves = focustree.extract_selected_leaves(nodule_tree, flag_stat, stdout)
     start_time = datetime.now()
 
     # Run all the selected slab
@@ -143,21 +147,30 @@ def flat_run(
 
     duration = datetime.now() - start_time
 
+    if flag_stat.focus_count > 0 or flag_stat.skip_count > 0:
+        message_list = []
+        if flag_stat.focus_count > 0:
+            message_list.append(f"{flag_stat.focus_count} focused node(s)")
+        if flag_stat.skip_count > 0:
+            message_list.append(f"{flag_stat.skip_count} pending node(s)")
+        print(f"Encountered {' and '.join(message_list)}", file=stdout)
+
     outcome = "SUCCESS"
     if len(s.failure_report) > 0:
-        print("\n".join(s.failure_report))
+        print("\n".join(s.failure_report), file=stdout)
         outcome = "FAILURE"
     print(
         (
-            "Ran {} tiles in {}\n"
+            "Ran {} tiles in {:.3g}ms\n"
             "{} -- {} Passed | {} Failed | {} Aborted | {} Raised"
         ).format(
             s.tile_count,
-            duration,
+            duration.total_seconds() * 1000,
             outcome,
             s.tile_passed,
             s.tile_failed,
             s.tile_aborted,
             s.tile_raised,
-        )
+        ),
+        file=stdout,
     )

@@ -133,6 +133,10 @@ func AddAnimal(animal string) string {
 ## Running the tests
 
 ```sh
+# rust
+cd rust
+cargo test
+
 # golang
 go test ./test/counter ./test/novel ./test/zoo
 # or
@@ -165,23 +169,13 @@ The content of a yaml test data file must match the `main` rule of the lidy sche
 ```yaml
 main: nodule
 
-# scalar is any yaml scalar. Please note that whatever the type is, it will
-# appear as a string in the tile Dict.
-scalar:
-  _oneOf:
-    - string
-    - int
-    - float
-    - boolean
-    - nullType
-
-# A tip can be a scalar or a list of scalars. In the case of a list, all the
+# A tip can be a string or a list of strings. In the case of a list, all the
 # combination of values taken from this list and lists of other parameters will
 # be generated and run. This produces the effect of a test matrix.
 tip:
   _oneOf:
-    - scalar
-    - _listOf: scalar
+    - string
+    - _listOf: string
 
 nodule:
   _mapFacultative:
