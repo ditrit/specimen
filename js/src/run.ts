@@ -3,7 +3,7 @@ import * as yaml from "yaml"
 import * as syaml from "./syaml"
 import * as focustree from "./focustree/focustree"
 import { deepEqual } from "./deepEqual"
-import { FailStatus, File } from "./structure"
+import { FailStatus, File, Writer } from "./structure"
 import { Nodule, parseFileIntoNodule } from "./nodule"
 
 export class SpecimenContext {
@@ -51,6 +51,17 @@ export function run(
     ) => void,
     dataFileArray: File[],
 ) {
+    iolessRun(testFunction, dataFileArray, process.stdout)
+}
+
+export function iolessRun(
+    testFunction: (
+        context: SpecimenContext,
+        tile: Record<string, string>,
+    ) => void,
+    dataFileArray: File[],
+    stdout: Writer,
+) {
     let context: SpecimenContext = new SpecimenContext()
 
     let tree: Nodule[] = []
@@ -83,7 +94,12 @@ export function run(
         validTree,
         new yaml.LineCounter(),
     )
-    let selectedLeaves = focustree.extractSelectedLeaves(noduleTree)
+    let flagStat = { focusCount: 0, skipCount: 0 }
+    let selectedLeaves = focustree.extractSelectedLeaves(
+        noduleTree,
+        flagStat,
+        stdout,
+    )
 
     let startTime = performance.now()
 
@@ -137,14 +153,27 @@ export function run(
 
     let duration = performance.now() - startTime
 
+    if (flagStat.focusCount > 0 || flagStat.skipCount > 0) {
+        const messageArray: string[] = []
+        if (flagStat.focusCount > 0) {
+            messageArray.push(`${flagStat.focusCount} focused node(s)`)
+        }
+        if (flagStat.skipCount > 0) {
+            messageArray.push(`${flagStat.skipCount} pending node(s)`)
+        }
+        stdout.write(`Encountered ${messageArray.join(" and ")}\n`)
+    }
+
     // reporting what has been saved in s
     let outcome = "SUCCESS"
     if (context.failureReport.length > 0) {
-        console.log(context.failureReport.join("\n"))
+        stdout.write(context.failureReport.join("\n") + "\n")
         outcome = "FAILURE"
     }
-    console.log(
-        `Ran ${context.tileCount} slabs in ${duration} ms\n` +
-            `${outcome} -- ${context.tilePassed} Passed | ${context.tileFailed} Failed | ${context.tileAborted} Aborted | ${context.tileThrew} Threw`,
+    stdout.write(
+        `Ran ${context.tileCount} tiles in ${
+            Math.floor(1000 * duration) / 1000
+        }ms\n` +
+            `${outcome} -- ${context.tilePassed} Passed | ${context.tileFailed} Failed | ${context.tileAborted} Aborted | ${context.tileThrew} Threw\n`,
     )
 }

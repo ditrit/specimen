@@ -4,7 +4,7 @@ let counter = 0;
 
 specimen.run(
   (s, tile) => {
-    expected = tile.expected_count;
+    let expected = tile.expected_count;
     if (expected !== undefined) {
       s.expectEqual(counter, Number(expected), "count comparison");
     }

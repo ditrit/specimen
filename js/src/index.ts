@@ -1,2 +1,3 @@
 export { readLocalFile } from "./file"
-export { run } from "./run"
+export type { File } from "./file"
+export { run, iolessRun, SpecimenContext } from "./run"

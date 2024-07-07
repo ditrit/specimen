@@ -158,7 +158,7 @@ yarn install
 yarn build
 cd ..
 node test/counter/counter_test.js
-node test/novel/novel_test.js
+(cd test/novel && yarn install && node novel_test.js)
 node test/zoo/zoo_test.js
 ```
 

@@ -10,3 +10,7 @@ export interface File {
 }
 
 export type YAMLNode = Scalar | YAMLMap | YAMLSeq
+
+export interface Writer {
+    write(s: string): void
+}

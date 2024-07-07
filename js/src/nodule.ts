@@ -2,7 +2,7 @@ import * as yaml from "yaml"
 
 import * as focustree from "./focustree/focustree"
 import * as syaml from "./syaml"
-import { File, YAMLNode } from "./structure"
+import { File, Writer, YAMLNode } from "./structure"
 import { readFlag } from "./flag"
 
 export function parseFileIntoNodule(file: File): Nodule {
@@ -48,8 +48,8 @@ export class Nodule implements focustree.Node {
     getChildren() {
         return this.children
     }
-    warning(message: string): void {
-        console.warn("Warning(%s): %s", this.getLocation(), message)
+    warning(message: string, stdout: Writer): void {
+        stdout.write(`Warning(${this.getLocation()}): ${message}\n`)
     }
 
     getLocation() {
@@ -97,7 +97,6 @@ export class Nodule implements focustree.Node {
     }
 
     populate(dataMatrix: Record<string, string[]>) {
-        ;``
         if (this.flag === "Skip") {
             return
         }
@@ -144,43 +143,31 @@ export class Nodule implements focustree.Node {
     }
 
     *iterateDataMatrix() {
-        let length = Object.keys(this.dataMatrix).length
+        const reversedKeyArray = Object.keys(this.dataMatrix).reverse()
+        const reversedSizeArray = reversedKeyArray.map(
+            (key) => this.dataMatrix[key].length,
+        )
+        const reversedIndexArray = reversedSizeArray.map(() => 0)
 
-        let reversedKeyArray = Object.keys(this.dataMatrix).reverse()
-
-        let totalCombinations = 1
-        let sizeArray: number[] = []
-        reversedKeyArray.forEach((key) => {
-            let size = this.dataMatrix[key].length
-            totalCombinations *= size
-            sizeArray.push(totalCombinations)
-        })
-
-        let indexArray = Array.from({ length }, () => 0)
-
-        let combination: Record<string, string> = {}
-
+        const combination: Record<string, string> = {}
         reversedKeyArray.forEach((key) => {
             combination[key] = this.dataMatrix[key][0]
         })
-
         yield combination
-        for (let index = 1; index < totalCombinations; index++) {
-            for (let k = 0; k < length; k++) {
-                let size = sizeArray[k]
-                let nonZero = index % size > 0
-                // bump the index
-                indexArray[k] += 1
-                indexArray[k] %= size
-                if (nonZero) {
-                    // update the combination entry corresponding to the identified key
-                    let key = reversedKeyArray[k]
-                    combination[key] = this.dataMatrix[key][indexArray[k]]
-                    yield combination
-                    break
+
+        while (true) {
+            let n = -1
+            while (n < 0 || reversedIndexArray[n] == 0) {
+                n += 1
+                if (n >= reversedIndexArray.length) {
+                    return
                 }
+                reversedIndexArray[n] += 1
+                reversedIndexArray[n] %= reversedSizeArray[n]
+                combination[reversedKeyArray[n]] =
+                    this.dataMatrix[reversedKeyArray[n]][reversedIndexArray[n]]
             }
+            yield combination
         }
-        return
     }
 }

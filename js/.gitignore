@@ -1,5 +1,6 @@
 !/.gitignore
 !/.npmignore
 !/.prettierrc
+!/.yarnrc.yml
 node_modules/
 dist/
