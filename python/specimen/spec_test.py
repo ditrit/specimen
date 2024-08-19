@@ -57,10 +57,10 @@ def report(context, behavior, filepath, spec, report, **kwargs):
 
 
 @run(
-    read_local_file("../spec/about.yaml", location=__file__),
-    read_local_file("../spec/flag.yaml", location=__file__),
-    read_local_file("../spec/matrix.yaml", location=__file__),
-    read_local_file("../spec/report.yaml", location=__file__),
+    read_local_file("../../spec/about.yaml", location=__file__),
+    read_local_file("../../spec/flag.yaml", location=__file__),
+    read_local_file("../../spec/matrix.yaml", location=__file__),
+    read_local_file("../../spec/report.yaml", location=__file__),
 )
 def test(context, box=None, **kwargs):
     if box == "call-logger":

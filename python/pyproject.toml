@@ -1,9 +1,18 @@
 [tool.poetry]
 name = "specimen"
 version = "0.1.0"
-description = ""
+description = "A data-driven testing library as well as a yaml data format."
 authors = ["Mathieu CAROFF <mathieu.caroff@free.fr>"]
-package-mode = false
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/ditrit/specimen"
+Issues = "https://github.com/ditrit/specimen/issues"
 
 [tool.poetry.dependencies]
 python = "^3.10.2"

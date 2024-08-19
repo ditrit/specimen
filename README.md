@@ -2,9 +2,9 @@
 
 _Yaml-based data-driven testing_
 
-Specimen is a data-driven testing library as well as a yaml data format. It enforces separation between the _feature being tested_ and the _data_ used for testing.
+Specimen is a data-driven testing library as well as a yaml data format. It enforces separation between the _feature being tested_ and the _data_ used for testing. Specimen enable the creation of language-agnostic actionable specifications.
 
-It comes with a **Golang** implementation for loading the data, checking its format, running your _test box_ and comparing the result with the expected one.
+So far, Specimen has been implemented in four languages: **Rust**, **Golang**, **Python** and **JS** (TypeScript acutally). The implementations are backed by the common [Specimen specification](spec).
 
 It supports using the `FOCUS` and `PENDING` flags in the data tree to run only parts of the test data.
 
@@ -184,12 +184,11 @@ nodule:
     # not contain it are seen as leaves
     content:
       - _listOf: nodule
-    # The flag can be either "PENDING", "FOCUS" or .not specified.
+    # The flag can start with "PENDING" or "FOCUS" or not be specified.
     # The PENDING flag tells the engine to skip the node and all its decendants.
     # The FOCUS flag tells the engine to skip all the OTHER nodes; the one which
     # do not have the flag "FOCUS".
-    flag:
-      _in: ["PENDING", "FOCUS"]
+    flag: string
     # `about` can contain any data: it will not be checked by the parser, and it
     # will not appear in the data passed to the box function
     about: any
