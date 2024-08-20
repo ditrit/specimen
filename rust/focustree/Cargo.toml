@@ -1,12 +1,17 @@
 [package]
-name = "focustree"
+name = "specimen__focustree"
 version = "0.1.0"
 edition = "2021"
+license = "MPL-2.0"
+description = "A tree traversal algorithm for extracting focused nodes."
+homepage = "https://github.com/ditrit/specimen"
+repository = "https://github.com/ditrit/specimen"
+readme = "../../README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-writable = { path = "../writable" }
+specimen__writable = { path = "../writable", version = "0.1.0" }
 
 [lib]
 name = "focustree"

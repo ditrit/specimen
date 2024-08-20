@@ -3,5 +3,12 @@
 version = 3
 
 [[package]]
-name = "focustree"
+name = "specimen__focustree"
+version = "0.1.0"
+dependencies = [
+ "specimen__writable",
+]
+
+[[package]]
+name = "specimen__writable"
 version = "0.1.0"

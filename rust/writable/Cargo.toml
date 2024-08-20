@@ -1,7 +1,12 @@
 [package]
-name = "writable"
+name = "specimen__writable"
 version = "0.1.0"
 edition = "2021"
+license = "MPL-2.0"
+description = "A helper type to help test the output writte to stdout by some code."
+homepage = "https://github.com/ditrit/specimen"
+repository = "https://github.com/ditrit/specimen"
+readme = "../../README.md"
 
 [lib]
 name = "writable"

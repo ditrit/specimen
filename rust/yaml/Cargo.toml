@@ -1,7 +1,12 @@
 [package]
-name = "yaml"
+name = "specimen__yaml"
 version = "0.1.0"
 edition = "2021"
+license = "MPL-2.0"
+description = "A modified version of yaml-rust to keep line and column numbers in the parsed data."
+homepage = "https://github.com/ditrit/specimen"
+repository = "https://github.com/ditrit/specimen"
+readme = "../../README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

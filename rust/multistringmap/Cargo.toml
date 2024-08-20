@@ -1,7 +1,12 @@
 [package]
-name = "multistringmap"
+name = "specimen__multistringmap"
 version = "0.1.0"
 edition = "2021"
+license = "MPL-2.0"
+description = "An algorithm to compute cross products of multiple arrays."
+homepage = "https://github.com/ditrit/specimen"
+repository = "https://github.com/ditrit/specimen"
+readme = "../../README.md"
 
 [lib]
 name = "multistringmap"
