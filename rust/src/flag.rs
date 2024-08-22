@@ -1,3 +1,6 @@
+use specimen__focustree as focustree;
+use specimen__yaml as yaml;
+
 pub fn read_flag(node: &yaml::Yaml) -> focustree::Flag {
     let mut flag = focustree::Flag::default();
     // flag_name is used for printing warning(s) if needed

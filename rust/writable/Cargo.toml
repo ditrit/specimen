@@ -9,5 +9,5 @@ repository = "https://github.com/ditrit/specimen"
 readme = "../../README.md"
 
 [lib]
-name = "writable"
+name = "specimen__writable"
 path = "writable.rs"

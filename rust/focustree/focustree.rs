@@ -2,7 +2,7 @@
 //! from the leaves of the tree, while supporting the option for the tree
 //! to skip or focus certain branches.
 
-use writable::Writable;
+use specimen__writable::Writable;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Flag {
@@ -128,7 +128,7 @@ mod tests {
             fn get_value(&self) -> i32 {
                 self.value
             }
-            fn warning(&self, _message: &str) {}
+            fn warning(&self, _message: &str, _stdout: &mut Writable) {}
         }
 
         // This tree is used to test the library.
@@ -201,8 +201,9 @@ mod tests {
         };
 
         let mut actual_result = Vec::new();
-        let mut flag_stat = focustree::FlagStat::default();
-        extract_focused_leaf_values(&tree, &mut actual_result, flag_stat, stdout);
+        let mut flag_stat = FlagStat::default();
+        let mut stdout = Writable::Vec(Vec::new());
+        extract_focused_leaf_values(&tree, &mut actual_result, &mut flag_stat, &mut stdout);
 
         assert_eq!(actual_result, vec![9, 10, 6]);
     }

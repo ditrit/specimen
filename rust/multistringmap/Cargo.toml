@@ -9,7 +9,7 @@ repository = "https://github.com/ditrit/specimen"
 readme = "../../README.md"
 
 [lib]
-name = "multistringmap"
+name = "specimen__multistringmap"
 path = "multistringmap.rs"
 
 [dependencies]

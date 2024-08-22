@@ -14,5 +14,5 @@ readme = "../../README.md"
 specimen__writable = { path = "../writable", version = "0.1.0" }
 
 [lib]
-name = "focustree"
+name = "specimen__focustree"
 path = "focustree.rs"

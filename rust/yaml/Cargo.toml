@@ -14,5 +14,5 @@ readme = "../../README.md"
 yaml-rust = "0.4.5"
 
 [lib]
-name = "yaml"
+name = "specimen__yaml"
 path = "yaml.rs"

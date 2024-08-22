@@ -3,9 +3,11 @@ mod flag;
 mod nodule;
 mod tree;
 
-pub use multistringmap::Dict;
-use multistringmap::MultiStringMap;
-pub use writable::Writable;
+use specimen__focustree as focustree;
+pub use specimen__multistringmap::Dict;
+use specimen__multistringmap::MultiStringMap;
+pub use specimen__writable::Writable;
+use specimen__yaml as yaml;
 
 use std::io;
 use std::io::Write;

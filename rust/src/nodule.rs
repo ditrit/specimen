@@ -1,8 +1,9 @@
 use crate::file;
 use crate::flag;
-use multistringmap::MultiStringMap;
+use specimen__focustree as focustree;
+use specimen__multistringmap::MultiStringMap;
+use specimen__yaml as yaml;
 use std::rc::Rc;
-use yaml;
 
 #[derive(Clone, Debug)]
 pub struct Nodule<'a> {
