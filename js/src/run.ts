@@ -1,10 +1,9 @@
 import * as yaml from "yaml"
 
-import * as syaml from "./syaml"
-import * as focustree from "./focustree/focustree"
 import { deepEqual } from "./deepEqual"
-import { FailStatus, File, Writer } from "./structure"
+import * as focustree from "./focustree/focustree"
 import { Nodule, parseFileIntoNodule } from "./nodule"
+import { FailStatus, File, Writer } from "./structure"
 
 export class SpecimenContext {
     tileCount: number = 0
@@ -80,7 +79,7 @@ export function iolessRun(
             nodule.populate(data_map)
         } catch (e) {
             ok = false
-            console.error(e)
+            console.error(`${nodule.filePath}: ${e}`)
         }
         return ok
     })

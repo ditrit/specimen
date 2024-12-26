@@ -1,9 +1,9 @@
 import * as yaml from "yaml"
 
-import * as focustree from "./focustree/focustree"
-import * as syaml from "./syaml"
-import { File, Writer, YAMLNode } from "./structure"
 import { readFlag } from "./flag"
+import * as focustree from "./focustree/focustree"
+import { File, Writer, YAMLNode } from "./structure"
+import * as syaml from "./syaml"
 
 export function parseFileIntoNodule(file: File): Nodule {
     let lineCounter = new yaml.LineCounter()
@@ -127,7 +127,7 @@ export class Nodule implements focustree.Node {
                                   key.value
                               }, subitem value: ${
                                   (item as yaml.Scalar).value
-                              })`,
+                              }, filepath: ${this.filePath})`,
                           )
                       }
                       return (item as yaml.Scalar<string>).value
